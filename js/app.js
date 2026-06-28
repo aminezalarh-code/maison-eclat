@@ -290,8 +290,10 @@ function initReveal() {
 }
 
 /* ---------------- Product card markup ---------------- */
+function badgeClass(b) { return b === 'New' ? 'new' : b === 'Limited' ? 'limited' : ''; }
+
 function productCard(p, delay = 0) {
-  const badge = p.badge ? `<span class="product-badge ${p.badge === 'New' ? 'new' : ''}">${p.badge}</span>` : '';
+  const badge = p.badge ? `<span class="product-badge ${badgeClass(p.badge)}">${p.badge}</span>` : '';
   const old = p.oldPrice ? `<s>${formatPrice(p.oldPrice)}</s>` : '';
   return `<article class="product-card" data-reveal data-delay="${delay}">
     <div class="product-card__media">
@@ -307,10 +309,19 @@ function productCard(p, delay = 0) {
       <div class="product-card__mat">${p.material}</div>
       <div class="product-card__foot">
         <div class="product-card__price">${old}${formatPrice(p.price)}</div>
-        <a class="link-arrow" href="product.html?id=${p.id}">View ${ICONS.arrow}</a>
+        <div class="product-card__actions">
+          <a class="link-arrow" href="product.html?id=${p.id}">Details ${ICONS.arrow}</a>
+          <button class="card-wa" aria-label="Order ${p.name} on WhatsApp" title="Order on WhatsApp" onclick="waProduct('${p.id}')">${ICONS.wa}</button>
+        </div>
       </div>
     </div>
   </article>`;
+}
+
+function waProduct(id) {
+  const p = PRODUCTS.find(x => x.id === id); if (!p) return;
+  const msg = `Bonjour ${BRAND} 👋%0AJe suis intéressé(e) par : ${p.name} (${formatPrice(p.price)})`;
+  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, '_blank');
 }
 
 /* ---------------- Home: best sellers ---------------- */
@@ -381,9 +392,11 @@ function renderProductPage() {
       </div>
       <div class="pdp__grid" style="margin-top:1.6rem">
         <div data-reveal>
-          <div class="gallery__main" id="galMain">${productMedia(p)}</div>
+          <div class="gallery__main" id="galMain"><img src="${p.image}" alt="${p.name} — ${p.material}" onerror="this.outerHTML=phSVG('${p.category}')"></div>
           <div class="gallery__thumbs">
-            ${[0,1,2,3].map(i=>`<div class="gallery__thumb ${i===0?'active':''}">${phSVG(p.category)}</div>`).join('')}
+            ${[p.image, 'assets/material.webp', 'assets/editorial.webp', 'assets/about.webp'].map((src,i)=>
+              `<div class="gallery__thumb ${i===0?'active':''}" data-src="${src}"><img src="${src}" alt="${p.name} view ${i+1}" loading="lazy"></div>`
+            ).join('')}
           </div>
         </div>
         <div data-reveal data-delay="1">
@@ -444,7 +457,7 @@ function renderProductPage() {
   mount.querySelectorAll('.gallery__thumb').forEach(t => t.addEventListener('click', () => {
     mount.querySelectorAll('.gallery__thumb').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
-    main.innerHTML = t.innerHTML;
+    main.innerHTML = `<img src="${t.dataset.src}" alt="${p.name}">`;
   }));
 
   // qty
