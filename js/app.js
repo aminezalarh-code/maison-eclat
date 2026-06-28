@@ -292,6 +292,7 @@ function badgeClass(b) { return b === 'New' ? 'new' : b === 'Limited' ? 'limited
 function productCard(p, delay = 0) {
   const badge = p.badge ? `<span class="product-badge ${badgeClass(p.badge)}">${p.badge}</span>` : '';
   const old = p.oldPrice ? `<s>${formatPrice(p.oldPrice)}</s>` : '';
+  const priceBlock = `<div class="product-card__price">${old}<span class="now">${formatPrice(p.price)}</span></div>`;
   return `<article class="product-card" data-reveal data-delay="${delay}">
     <div class="product-card__media">
       <a href="product.html?id=${p.id}" aria-label="${p.name}">${productMedia(p)}</a>
@@ -305,9 +306,9 @@ function productCard(p, delay = 0) {
       <h3 class="product-card__name"><a href="product.html?id=${p.id}">${p.name}</a></h3>
       <div class="product-card__mat">${p.material}</div>
       <div class="product-card__foot">
-        <div class="product-card__price">${old}${formatPrice(p.price)}</div>
+        ${priceBlock}
         <div class="product-card__actions">
-          <a class="link-arrow" href="product.html?id=${p.id}">Details ${ICONS.arrow}</a>
+          <a class="link-arrow" href="product.html?id=${p.id}">View Details ${ICONS.arrow}</a>
           <button class="card-wa" aria-label="Order ${p.name} on WhatsApp" title="Order on WhatsApp" onclick="waProduct('${p.id}')">${ICONS.wa}</button>
         </div>
       </div>
