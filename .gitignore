@@ -1,0 +1,9 @@
+# Local preview helpers (not needed for hosting)
+.claude/server.js
+.claude/launch.json
+
+# OS / editor cruft
+Thumbs.db
+.DS_Store
+*.log
+node_modules/
