@@ -207,6 +207,13 @@ h1, h2, h3, h4 { font-family: var(--display); font-weight: 500; color: var(--ivo
   display: flex; flex-direction: column; align-items: center; line-height: 1;
   text-align: center;
 }
+.brand__logo { height: 58px; width: auto; display: block; }
+.brand__fallback { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.brand__logo.hide, .brand__fallback.hide { display: none; }
+.mobile-mark { height: 50px; }
+.footer-mark { height: 84px; }
+.footer__brand .brand { align-items: flex-start; }
+.footer__brand .brand__fallback { align-items: flex-start; }
 .brand__name {
   font-family: var(--display);
   font-size: 1.55rem;

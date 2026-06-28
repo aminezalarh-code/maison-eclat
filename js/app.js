@@ -5,7 +5,19 @@
    ============================================================ */
 
 const WHATSAPP_NUMBER = '212600000000'; // ← replace with the brand's real number (international, no +)
-const BRAND = 'Maison Éclat';
+const BRAND = 'Belorya';
+const TAGLINE = 'Eternal Shine';
+const LOGO_SRC = 'assets/logo.png'; // drop the real logo here; falls back to text wordmark
+
+/* Brand lockup — uses the logo image if present, else an elegant text fallback */
+function brandLockup(extraClass = '') {
+  return `<img class="brand__logo ${extraClass}" src="${LOGO_SRC}" alt="${BRAND} — ${TAGLINE}"
+      onerror="this.classList.add('hide');this.nextElementSibling.classList.remove('hide')">
+    <span class="brand__fallback hide">
+      <span class="brand__name">BELORYA</span>
+      <span class="brand__tag">${TAGLINE}</span>
+    </span>`;
+}
 
 /* ---------------- Shared icons ---------------- */
 const ICONS = {
@@ -47,8 +59,7 @@ function renderHeader() {
           <ul class="nav__menu">${links}</ul>
         </div>
         <a class="brand" href="index.html" aria-label="${BRAND} home">
-          <span class="brand__name">ÉCLAT</span>
-          <span class="brand__tag">Acier · Maison</span>
+          ${brandLockup()}
         </a>
         <div class="nav__right">
           <a class="nav__cta" href="https://wa.me/${WHATSAPP_NUMBER}" target="_blank" rel="noopener">${ICONS.wa}<span>WhatsApp</span></a>
@@ -60,6 +71,8 @@ function renderHeader() {
     </header>
     <nav class="mobile-menu" id="mobileMenu" aria-hidden="true">
       <ul>${NAV_LINKS.map((l,i)=>`<li><a href="${l.href}" style="animation-delay:${0.06*i}s">${l.label}</a></li>`).join('')}</ul>
+      <!-- mobile brand mark -->
+      <div style="position:absolute;top:1.6rem;left:var(--gut)"><a class="brand" href="index.html">${brandLockup('mobile-mark')}</a></div>
       <div class="mobile-menu__foot">
         <a class="footer__wa" href="https://wa.me/${WHATSAPP_NUMBER}" target="_blank" rel="noopener">${ICONS.wa} Order on WhatsApp</a>
       </div>
@@ -98,10 +111,7 @@ function renderFooter() {
       <div class="wrap">
         <div class="footer__top">
           <div class="footer__brand">
-            <a class="brand" href="index.html">
-              <span class="brand__name">ÉCLAT</span>
-              <span class="brand__tag">Acier · Maison</span>
-            </a>
+            <a class="brand" href="index.html">${brandLockup('footer-mark')}</a>
             <p>Refined stainless-steel jewellery, designed in the studio and made to be worn every day. Accessible luxury, built to last.</p>
             <div class="footer__socials">
               <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram">${ICONS.ig}</a>
@@ -134,7 +144,7 @@ function renderFooter() {
             <h5>Contact</h5>
             <ul>
               <li>Casablanca, Morocco</li>
-              <li><a href="mailto:bonjour@maison-eclat.com">bonjour@maison-eclat.com</a></li>
+              <li><a href="mailto:hello@belorya.com">hello@belorya.com</a></li>
               <li>Mon–Sat · 10:00–19:00</li>
             </ul>
             <a class="footer__wa" href="https://wa.me/${WHATSAPP_NUMBER}" target="_blank" rel="noopener">${ICONS.wa} Order on WhatsApp</a>
@@ -412,7 +422,7 @@ function renderProductPage() {
             ${accItem('Delivery', `<ul>
               <li>Standard delivery in 2–4 business days.</li>
               <li>Cash on delivery available in selected regions.</li>
-              <li>Each piece ships in a Maison Éclat gift box.</li>
+              <li>Each piece ships in a Belorya gift box.</li>
             </ul>`)}
             ${accItem('Returns', `<ul>
               <li>14-day returns on unworn pieces in original packaging.</li>
