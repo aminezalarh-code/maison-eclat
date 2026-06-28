@@ -35,10 +35,9 @@ const ICONS = {
 const NAV_LINKS = [
   { href: 'index.html', label: 'Home' },
   { href: 'collections.html', label: 'Collections' },
-  { href: 'index.html#about', label: 'About' },
   { href: 'collections.html?sort=best', label: 'Best Sellers' },
-  { href: 'index.html#contact', label: 'Contact' },
-  { href: 'collections.html', label: 'Shop' }
+  { href: 'index.html#about', label: 'About' },
+  { href: 'index.html#contact', label: 'Contact' }
 ];
 
 /* ---------------- Header ---------------- */
@@ -54,18 +53,16 @@ function renderHeader() {
   mount.innerHTML = `
     <header class="site-header" id="header">
       <div class="wrap nav">
-        <button class="nav__toggle" aria-label="Open menu" id="navToggle"><span></span></button>
-        <div class="nav__left">
-          <ul class="nav__menu">${links}</ul>
-        </div>
         <a class="brand" href="index.html" aria-label="${BRAND} home">
           ${brandLockup()}
         </a>
+        <ul class="nav__menu">${links}</ul>
         <div class="nav__right">
           <a class="nav__cta" href="https://wa.me/${WHATSAPP_NUMBER}" target="_blank" rel="noopener">${ICONS.wa}<span>WhatsApp</span></a>
           <button class="icon-btn" id="cartOpen" aria-label="Open cart">
             ${ICONS.cart}<span class="cart-count" id="cartCount">0</span>
           </button>
+          <button class="nav__toggle" aria-label="Open menu" id="navToggle"><span></span></button>
         </div>
       </div>
     </header>
