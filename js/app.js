@@ -7,7 +7,7 @@
 const WHATSAPP_NUMBER = '212600000000'; // ← replace with the brand's real number (international, no +)
 const BRAND = 'Belorya';
 const TAGLINE = 'Eternal Shine';
-const LOGO_SRC = 'assets/logo.png'; // drop the real logo here; falls back to text wordmark
+const LOGO_SRC = 'assets/logo.jpeg'; // drop the real logo here; falls back to text wordmark
 
 /* Brand lockup - uses the logo image if present, else an elegant text fallback */
 function brandLockup(extraClass = '') {
