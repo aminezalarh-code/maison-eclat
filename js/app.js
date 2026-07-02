@@ -149,7 +149,7 @@ function renderFooter() {
         <div class="footer__bottom">
           <p>© ${year} ${BRAND}. All rights reserved.</p>
           <div class="footer__pay">
-            <span>Visa</span><span>Mastercard</span><span>COD</span><span>WhatsApp</span>
+            <span>COD</span><span>WhatsApp</span>
           </div>
           <p><a href="#">Privacy</a> · <a href="#">Terms</a></p>
         </div>
