@@ -120,11 +120,10 @@ function renderFooter() {
             <h5>Collections</h5>
             <ul>
               <li><a href="collections.html?cat=necklaces">Necklaces</a></li>
-              <li><a href="collections.html?cat=bracelets">Bracelets</a></li>
-              <li><a href="collections.html?cat=rings">Rings</a></li>
+              <li><a href="collections.html?cat=sets">Sets</a></li>
               <li><a href="collections.html?cat=earrings">Earrings</a></li>
-              <li><a href="collections.html?cat=chains">Chains</a></li>
-              <li><a href="collections.html?cat=anklets">Anklets</a></li>
+              <li><a href="collections.html?sort=best">Best Sellers</a></li>
+              <li><a href="collections.html?sort=new">New Arrivals</a></li>
             </ul>
           </div>
           <div class="footer__col">
@@ -374,6 +373,7 @@ function renderProductPage() {
   if (!mount) return;
   const id = new URLSearchParams(location.search).get('id');
   const p = PRODUCTS.find(x => x.id === id) || PRODUCTS[0];
+  const gallery = (p.images && p.images.length) ? p.images : [p.image];
   document.title = `${p.name} — ${BRAND}`;
 
   const stars = '★★★★★';
@@ -390,12 +390,12 @@ function renderProductPage() {
       </div>
       <div class="pdp__grid" style="margin-top:1.6rem">
         <div data-reveal>
-          <div class="gallery__main" id="galMain"><img src="${p.image}" alt="${p.name} — ${p.material}" onerror="this.outerHTML=phSVG('${p.category}')"></div>
-          <div class="gallery__thumbs">
-            ${[p.image, 'assets/material.webp', 'assets/editorial.webp', 'assets/about.webp'].map((src,i)=>
-              `<div class="gallery__thumb ${i===0?'active':''}" data-src="${src}"><img src="${src}" alt="${p.name} view ${i+1}" loading="lazy"></div>`
+          <div class="gallery__main" id="galMain"><img src="${gallery[0]}" alt="${p.name} — ${p.material}" onerror="this.outerHTML=phSVG('${p.category}')"></div>
+          ${gallery.length > 1 ? `<div class="gallery__thumbs">
+            ${gallery.map((src,i)=>
+              `<div class="gallery__thumb ${i===0?'active':''}" data-src="${src}"><img src="${src}" alt="${p.name} — vue ${i+1}" loading="lazy"></div>`
             ).join('')}
-          </div>
+          </div>` : ''}
         </div>
         <div data-reveal data-delay="1">
           ${badge}

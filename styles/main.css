@@ -436,6 +436,7 @@ body.menu-open .mobile-menu a { animation: menuIn .6s var(--ease) forwards; }
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;
   margin-top: clamp(2.5rem, 5vw, 4rem);
 }
+.collections-grid--3 { grid-template-columns: repeat(3, 1fr); }
 .collection-card {
   position: relative;
   border: 1px solid var(--line-soft);
