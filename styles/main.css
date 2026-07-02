@@ -198,7 +198,7 @@ h1, h2, h3, h4 { font-family: var(--display); font-weight: 500; color: var(--ivo
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  height: 70px;
+  min-height: 70px;
   gap: 1.5rem;
 }
 .nav__right { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; }
@@ -207,11 +207,11 @@ h1, h2, h3, h4 { font-family: var(--display); font-weight: 500; color: var(--ivo
   display: flex; flex-direction: column; align-items: flex-start; line-height: 1;
   text-align: left;
 }
-.brand__logo { height: 42px; width: auto; display: block; }
+.brand__logo { height: 126px; width: auto; display: block; }
 .brand__fallback { display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
 .brand__logo.hide, .brand__fallback.hide { display: none; }
-.mobile-mark { height: 40px; }
-.footer-mark { height: 70px; }
+.mobile-mark { height: 120px; }
+.footer-mark { height: 210px; }
 .brand__name {
   font-family: var(--display);
   font-size: 1.32rem;
