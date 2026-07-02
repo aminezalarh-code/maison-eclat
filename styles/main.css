@@ -1,11 +1,11 @@
 /* ============================================================
-   MAISON ÉCLAT — Luxury Stainless Steel Jewelry
+   MAISON ÉCLAT - Luxury Stainless Steel Jewelry
    Design system & global styles
    ============================================================ */
 
 /* ---------- Design tokens ---------- */
 :root {
-  /* Surfaces — lifted off pure black for depth */
+  /* Surfaces - lifted off pure black for depth */
   --black:        #0e0d11;
   --charcoal:     #17151b;
   --panel:        #1a191e;
@@ -22,7 +22,7 @@
   --gold-bright:  #f3e2af;
   --gold-deep:    #9c7c33;
 
-  /* Text — higher contrast for readability */
+  /* Text - higher contrast for readability */
   --ivory:        #f6f1e8;
   --warm:         #e6dfd1;
   --muted:        #b3ab98;
@@ -490,7 +490,7 @@ body.menu-open .mobile-menu a { animation: menuIn .6s var(--ease) forwards; }
   border-bottom: 1px solid var(--line-soft);
   background: #131216;
 }
-/* only the image holder scales/fills — never the badge or quick-add overlay */
+/* only the image holder scales/fills - never the badge or quick-add overlay */
 .product-card__media > a { display: block; height: 100%; transition: transform .9s var(--ease); }
 .product-card:hover .product-card__media > a { transform: scale(1.07); }
 .product-badge {
@@ -778,7 +778,7 @@ body.menu-open .mobile-menu a { animation: menuIn .6s var(--ease) forwards; }
 .pdp__care b { display: block; font-size: 0.9rem; color: var(--ivory); letter-spacing: 0.02em; margin-bottom: 0.3rem; }
 .pdp__care p { font-size: 0.85rem; color: var(--muted); line-height: 1.6; margin: 0; }
 
-/* related — charcoal block that separates content from footer */
+/* related - charcoal block that separates content from footer */
 .pdp-related { margin-top: clamp(3rem, 6vw, 5rem); padding-block: clamp(3rem, 6vw, 5rem); border-top: 1px solid var(--line-soft); background: var(--charcoal); }
 
 /* mobile sticky order bar */

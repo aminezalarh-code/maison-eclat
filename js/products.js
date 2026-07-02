@@ -1,5 +1,5 @@
 /* ============================================================
-   BELORYA — Product data (real catalogue)
+   BELORYA - Product data (real catalogue)
    Prices in MAD (dirham). Names & descriptions in French (brand voice).
    Categories: necklaces · sets (parures) · earrings
    image = main photo · images[] = full gallery
@@ -236,7 +236,7 @@ function phSVG(cat) {
 
 function productMedia(p) {
   if (p.image) {
-    return `<img src="${p.image}" alt="${p.name} — ${p.material}" loading="lazy"
+    return `<img src="${p.image}" alt="${p.name} - ${p.material}" loading="lazy"
       onerror="this.outerHTML=phSVG('${p.category}')">`;
   }
   return phSVG(p.category);

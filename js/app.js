@@ -1,5 +1,5 @@
 /* ============================================================
-   MAISON ÉCLAT — App logic
+   MAISON ÉCLAT - App logic
    Header/footer injection · mobile menu · cart drawer (localStorage)
    · scroll reveal · product rendering · collection filters · PDP
    ============================================================ */
@@ -9,9 +9,9 @@ const BRAND = 'Belorya';
 const TAGLINE = 'Eternal Shine';
 const LOGO_SRC = 'assets/logo.png'; // drop the real logo here; falls back to text wordmark
 
-/* Brand lockup — uses the logo image if present, else an elegant text fallback */
+/* Brand lockup - uses the logo image if present, else an elegant text fallback */
 function brandLockup(extraClass = '') {
-  return `<img class="brand__logo ${extraClass}" src="${LOGO_SRC}" alt="${BRAND} — ${TAGLINE}"
+  return `<img class="brand__logo ${extraClass}" src="${LOGO_SRC}" alt="${BRAND} - ${TAGLINE}"
       onerror="this.classList.add('hide');this.nextElementSibling.classList.remove('hide')">
     <span class="brand__fallback hide">
       <span class="brand__name">BELORYA</span>
@@ -252,14 +252,14 @@ function renderCart() {
   document.getElementById('cartSubtotal').textContent = formatPrice(cartTotal());
   document.getElementById('cartTotal').textContent = formatPrice(cartTotal());
   document.getElementById('cartWa').onclick = waOrderCart;
-  document.getElementById('cartCheckout').onclick = (e) => { e.preventDefault(); toast('Checkout is a demo — connect your payment provider.'); };
+  document.getElementById('cartCheckout').onclick = (e) => { e.preventDefault(); toast('Checkout is a demo, connect your payment provider.'); };
 }
 
 function waOrderCart() {
   const cart = getCart();
   if (!cart.length) return;
   let msg = `Bonjour ${BRAND} 👋%0AJe souhaite commander :%0A`;
-  cart.forEach(i => { const p = PRODUCTS.find(x => x.id === i.id); if (p) msg += `• ${p.name} × ${i.qty} — ${formatPrice(p.price*i.qty)}%0A`; });
+  cart.forEach(i => { const p = PRODUCTS.find(x => x.id === i.id); if (p) msg += `• ${p.name} × ${i.qty} - ${formatPrice(p.price*i.qty)}%0A`; });
   msg += `%0ATotal : ${formatPrice(cartTotal())}`;
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, '_blank');
 }
@@ -297,7 +297,7 @@ function productCard(p, delay = 0) {
       <a href="product.html?id=${p.id}" aria-label="${p.name}">${productMedia(p)}</a>
       ${badge}
       <div class="product-quick">
-        <button class="btn btn--gold btn--block btn--sm" onclick="addToCart('${p.id}')">Add to Bag — ${formatPrice(p.price)}</button>
+        <button class="btn btn--gold btn--block btn--sm" onclick="addToCart('${p.id}')">Add to Bag - ${formatPrice(p.price)}</button>
       </div>
     </div>
     <div class="product-card__body">
@@ -374,7 +374,7 @@ function renderProductPage() {
   const id = new URLSearchParams(location.search).get('id');
   const p = PRODUCTS.find(x => x.id === id) || PRODUCTS[0];
   const gallery = (p.images && p.images.length) ? p.images : [p.image];
-  document.title = `${p.name} — ${BRAND}`;
+  document.title = `${p.name} - ${BRAND}`;
 
   const stars = '★★★★★';
   const old = p.oldPrice ? `<s>${formatPrice(p.oldPrice)}</s>` : '';
@@ -391,10 +391,10 @@ function renderProductPage() {
       </div>
       <div class="pdp__grid">
         <div class="pdp__gallery" data-reveal>
-          <div class="gallery__main" id="galMain"><img src="${gallery[0]}" alt="${p.name} — ${p.material}" onerror="this.outerHTML=phSVG('${p.category}')"></div>
+          <div class="gallery__main" id="galMain"><img src="${gallery[0]}" alt="${p.name} - ${p.material}" onerror="this.outerHTML=phSVG('${p.category}')"></div>
           ${gallery.length > 1 ? `<div class="gallery__thumbs">
             ${gallery.map((src,i)=>
-              `<div class="gallery__thumb ${i===0?'active':''}" data-src="${src}"><img src="${src}" alt="${p.name} — vue ${i+1}" loading="lazy"></div>`
+              `<div class="gallery__thumb ${i===0?'active':''}" data-src="${src}"><img src="${src}" alt="${p.name} - vue ${i+1}" loading="lazy"></div>`
             ).join('')}
           </div>` : ''}
         </div>
@@ -439,7 +439,7 @@ function renderProductPage() {
               <li>Fabriqué en acier inoxydable, avec une finition dorée durable.</li>
               <li>Nettoyez délicatement avec un chiffon doux et sec pour raviver l'éclat.</li>
               <li>Conservez à l'abri de l'humidité, des parfums et des produits chimiques.</li>
-              <li>Résistant à l'eau, anti-ternissement &amp; hypoallergénique — <em>si confirmé par la marque</em>.</li>
+              <li>Résistant à l'eau, anti-ternissement &amp; hypoallergénique, <em>si confirmé par la marque</em>.</li>
             </ul>`)}
             ${accItem('Livraison', `<ul>
               <li>Livraison standard en 2 à 4 jours ouvrables.</li>
@@ -536,7 +536,7 @@ function initNewsletter() {
     const email = form.querySelector('input').value.trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.textContent = 'Please enter a valid email address.'; msg.style.color = '#d98a6a'; return; }
     msg.style.color = 'var(--gold-soft)';
-    msg.textContent = 'Welcome to the private list — check your inbox.';
+    msg.textContent = 'Welcome to the private list, check your inbox.';
     form.querySelector('input').value = '';
   });
 }
