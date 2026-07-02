@@ -378,18 +378,19 @@ function renderProductPage() {
 
   const stars = '★★★★★';
   const old = p.oldPrice ? `<s>${formatPrice(p.oldPrice)}</s>` : '';
-  const save = p.oldPrice ? `<em>Save ${formatPrice(p.oldPrice - p.price)}</em>` : '';
-  const badge = p.badge ? `<span class="product-badge ${p.badge==='New'?'new':''}" style="position:static;display:inline-block;margin-bottom:1rem">${p.badge}</span>` : '';
+  const save = p.oldPrice ? `<em>Économisez ${formatPrice(p.oldPrice - p.price)}</em>` : '';
+  const badge = p.badge ? `<span class="product-badge ${badgeClass(p.badge)}" style="position:static">${p.badge}</span>` : '';
+  const dropIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3c3 3.6 6 6.7 6 10a6 6 0 0 1-12 0c0-3.3 3-6.4 6-10Z"/></svg>';
 
   mount.innerHTML = `
     <div class="wrap">
       <div class="breadcrumb" data-reveal>
-        <a href="index.html">Home</a><span>/</span>
+        <a href="index.html">Accueil</a><span>/</span>
         <a href="collections.html?cat=${p.category}">${CATEGORY_LABELS[p.category]}</a><span>/</span>
         <span>${p.name}</span>
       </div>
-      <div class="pdp__grid" style="margin-top:1.6rem">
-        <div data-reveal>
+      <div class="pdp__grid">
+        <div class="pdp__gallery" data-reveal>
           <div class="gallery__main" id="galMain"><img src="${gallery[0]}" alt="${p.name} — ${p.material}" onerror="this.outerHTML=phSVG('${p.category}')"></div>
           ${gallery.length > 1 ? `<div class="gallery__thumbs">
             ${gallery.map((src,i)=>
@@ -397,58 +398,75 @@ function renderProductPage() {
             ).join('')}
           </div>` : ''}
         </div>
-        <div data-reveal data-delay="1">
-          ${badge}
+        <div class="pdp__info" data-reveal data-delay="1">
+          ${badge ? `<div class="pdp__badges">${badge}</div>` : ''}
           <div class="pdp__cat">${CATEGORY_LABELS[p.category]}</div>
           <h1 class="pdp__title">${p.name}</h1>
-          <div class="pdp__rating"><span class="stars">${stars}</span> ${p.rating} · <a href="#" style="color:var(--muted)">Read reviews</a></div>
-          <div class="pdp__price">${old}${formatPrice(p.price)} ${save}</div>
+          <div class="pdp__rating"><span class="stars">${stars}</span> ${p.rating} · <span class="pdp__reviews">Lire les avis</span></div>
+          <div class="pdp__price">${old}<span class="now">${formatPrice(p.price)}</span>${save}</div>
           <div class="pdp__mat">${ICONS.shield} ${p.material}</div>
           <p class="pdp__desc">${p.description}</p>
 
           <div class="pdp__buy">
-            <div class="qty">
-              <button id="qtyMinus" aria-label="Decrease">−</button>
-              <span id="qtyVal">1</span>
-              <button id="qtyPlus" aria-label="Increase">+</button>
+            <div class="pdp__buy-row">
+              <div class="qty" aria-label="Quantité">
+                <button id="qtyMinus" aria-label="Diminuer">−</button>
+                <span id="qtyVal">1</span>
+                <button id="qtyPlus" aria-label="Augmenter">+</button>
+              </div>
+              <button class="btn pdp__add" id="pdpAdd">Ajouter au panier</button>
             </div>
-            <button class="btn btn--gold" id="pdpAdd" style="flex:1;justify-content:center">Add to Bag</button>
-            <a class="btn pdp__wa" id="pdpWa" style="flex:1">${ICONS.wa} Order on WhatsApp</a>
+            <button class="btn btn--gold pdp__wa" id="pdpWa">${ICONS.wa} Commander sur WhatsApp</button>
           </div>
 
-          <div class="pdp__assure">
-            <div>${ICONS.shield}<b>Quality steel</b><span>316L stainless</span></div>
-            <div>${ICONS.truck}<b>Fast delivery</b><span>2–4 business days</span></div>
-            <div>${ICONS.refresh}<b>Easy returns</b><span>14-day window</span></div>
+          <div class="pdp__trust">
+            <div><span class="pdp__trust-ic">${ICONS.shield}</span><b>Acier inoxydable</b><span>Finition durable et élégante</span></div>
+            <div><span class="pdp__trust-ic">${ICONS.truck}</span><b>Livraison rapide</b><span>2–4 jours ouvrables</span></div>
+            <div><span class="pdp__trust-ic">${ICONS.refresh}</span><b>Retours faciles</b><span>Sous 14 jours</span></div>
+          </div>
+
+          <div class="pdp__care">
+            <span class="pdp__care-ic">${dropIc}</span>
+            <div>
+              <b>Conseil d'entretien</b>
+              <p>Pour préserver l'éclat de votre bijou, évitez le contact direct avec les parfums, les produits chimiques et l'humidité prolongée.</p>
+            </div>
           </div>
 
           <div class="accordion" id="acc">
             ${accItem('Description', `<p>${p.description}</p>`, true)}
-            ${accItem('Material & Care', `<ul>
-              <li>Crafted from ${p.material.toLowerCase()} (316L grade) with a champagne-gold PVD finish.</li>
-              <li>Wipe gently with a soft, dry cloth to restore shine.</li>
-              <li>Store dry, away from perfume and harsh chemicals.</li>
-              <li>Water-resistant, anti-tarnish &amp; hypoallergenic — <em>if confirmed by brand</em>.</li>
+            ${accItem('Matière &amp; Entretien', `<ul>
+              <li>Fabriqué en acier inoxydable, avec une finition dorée durable.</li>
+              <li>Nettoyez délicatement avec un chiffon doux et sec pour raviver l'éclat.</li>
+              <li>Conservez à l'abri de l'humidité, des parfums et des produits chimiques.</li>
+              <li>Résistant à l'eau, anti-ternissement &amp; hypoallergénique — <em>si confirmé par la marque</em>.</li>
             </ul>`)}
-            ${accItem('Delivery', `<ul>
-              <li>Standard delivery in 2–4 business days.</li>
-              <li>Cash on delivery available in selected regions.</li>
-              <li>Each piece ships in a Belorya gift box.</li>
+            ${accItem('Livraison', `<ul>
+              <li>Livraison standard en 2 à 4 jours ouvrables.</li>
+              <li>Paiement à la livraison disponible dans certaines régions.</li>
+              <li>Chaque pièce est expédiée dans un écrin Belorya.</li>
             </ul>`)}
-            ${accItem('Returns', `<ul>
-              <li>14-day returns on unworn pieces in original packaging.</li>
-              <li>Contact us on WhatsApp to arrange a return or exchange.</li>
+            ${accItem('Retours', `<ul>
+              <li>Retours sous 14 jours pour toute pièce non portée, dans son emballage d'origine.</li>
+              <li>Contactez-nous sur WhatsApp pour organiser un retour ou un échange.</li>
             </ul>`)}
           </div>
         </div>
       </div>
     </div>
 
-    <section class="section wrap" style="padding-top:clamp(3rem,6vw,5rem)">
-      <div class="section-head" data-reveal><span class="eyebrow">Complete the look</span>
-        <h2 class="section-title" style="font-size:clamp(1.8rem,3.5vw,2.6rem)">You may also <em>love</em></h2></div>
-      <div class="product-grid" id="related"></div>
-    </section>`;
+    <section class="pdp-related">
+      <div class="wrap">
+        <div class="section-head center" data-reveal><span class="eyebrow center">La sélection</span>
+          <h2 class="section-title" style="font-size:clamp(1.7rem,3vw,2.4rem)">Vous aimerez <em>aussi</em></h2></div>
+        <div class="product-grid" id="related"></div>
+      </div>
+    </section>
+
+    <div class="pdp-sticky" id="pdpSticky" aria-hidden="true">
+      <div class="pdp-sticky__price">${formatPrice(p.price)}</div>
+      <button class="btn btn--gold" id="pdpWaSticky">${ICONS.wa} Commander sur WhatsApp</button>
+    </div>`;
 
   // gallery thumbs
   const main = document.getElementById('galMain');
@@ -464,18 +482,29 @@ function renderProductPage() {
   document.getElementById('qtyMinus').onclick = () => { q = Math.max(1, q-1); qv.textContent = q; };
   document.getElementById('qtyPlus').onclick = () => { q++; qv.textContent = q; };
   document.getElementById('pdpAdd').onclick = () => { addToCart(p.id, q); openCart(); };
-  document.getElementById('pdpWa').onclick = () => {
+  const waOrder = () => {
     const msg = `Bonjour ${BRAND} 👋%0AJe suis intéressé(e) par : ${p.name} (${formatPrice(p.price)})%0AQuantité : ${q}`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, '_blank');
   };
+  document.getElementById('pdpWa').onclick = waOrder;
+  document.getElementById('pdpWaSticky').onclick = waOrder;
 
   // accordion
   initAccordion();
 
   // related
   const related = PRODUCTS.filter(x => x.category === p.category && x.id !== p.id)
-    .concat(PRODUCTS.filter(x => x.category !== p.category)).slice(0, 3);
-  document.getElementById('related').innerHTML = related.map((x,i)=>productCard(x,i+1)).join('');
+    .concat(PRODUCTS.filter(x => x.category !== p.category && x.id !== p.id)).slice(0, 3);
+  document.getElementById('related').innerHTML = related.map((x,i)=>productCard(x,(i%3)+1)).join('');
+
+  // reveal mobile sticky CTA once user scrolls past the main buy button
+  const sticky = document.getElementById('pdpSticky');
+  const buyBtn = document.getElementById('pdpWa');
+  if (sticky && buyBtn && 'IntersectionObserver' in window) {
+    new IntersectionObserver(([e]) => {
+      sticky.classList.toggle('show', !e.isIntersecting && e.boundingClientRect.top < 0);
+    }, { threshold: 0 }).observe(buyBtn);
+  }
 
   initReveal();
 }
