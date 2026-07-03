@@ -63,8 +63,10 @@ window.Store = (function () {
       const map = {}; (setts.data || []).forEach(r => map[r.key] = r.value || {});
       S.settings = map;
 
-      // pick the storefront promo: prefer BELORYA10, else first active & non-expired
+      // all active & non-expired promos (the cart validates any of them);
+      // "featured" promo (shown in the announcement bar): BELORYA10 if active, else the first
       const active = (promos.data || []).filter(p => !p.expires_at || new Date(p.expires_at).getTime() >= now);
+      S.promos = active;
       S.promo = active.find(p => p.code === 'BELORYA10') || active[0] || null;
 
       S.ready = true;
@@ -88,5 +90,5 @@ window.Store = (function () {
     } catch (e) { console.warn('[Store] saveOrder failed', e); return null; }
   }
 
-  return { hydrate, saveOrder, get settings() { return S.settings; }, get promo() { return S.promo; }, get client() { return S.client; } };
+  return { hydrate, saveOrder, get settings() { return S.settings; }, get promo() { return S.promo; }, get promos() { return S.promos || []; }, get client() { return S.client; } };
 })();

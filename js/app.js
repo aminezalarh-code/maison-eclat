@@ -18,14 +18,18 @@ let SOCIALS = {
   whatsapp: `https://wa.me/${WHATSAPP_NUMBER}`
 };
 
-/* Promo + shipping rules (defaults; overridden by settings) */
-let PROMO_CODE = 'BELORYA10';
-let PROMO_TYPE = 'percent';           // 'percent' | 'fixed'
-let PROMO_VALUE = 10;                 // 10(%) or a fixed MAD amount
-let PROMO_MIN = 0;                    // minimum order for the promo
+/* Promo + shipping rules (defaults; overridden by DB promo_codes/settings) */
+let PROMOS = [{ code: 'BELORYA10', type: 'percent', value: 10, min: 0 }]; // all valid codes the cart accepts
+let PROMO_CODE = 'BELORYA10';        // featured code shown in the announcement bar
 let SHIP_FEE = 35;                   // MAD, outside Casablanca under threshold
 let SHIP_FREE_THRESHOLD = 250;       // MAD
 let SHIP_CASA_FREE = true;
+
+function findPromo(code) {
+  const c = String(code || '').trim().toUpperCase();
+  if (!c) return null;
+  return PROMOS.find(p => String(p.code).toUpperCase() === c) || null;
+}
 
 /* Brand lockup */
 function brandLockup(extraClass = '') {
@@ -255,7 +259,9 @@ const ZONE_KEY = 'belorya_zone';
 
 function getCart() { try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch { return []; } }
 function saveCart(c) { localStorage.setItem(CART_KEY, JSON.stringify(c)); updateCartCount(); }
-function getPromo() { return localStorage.getItem(PROMO_KEY) === PROMO_CODE ? PROMO_CODE : null; }
+/* Applied promo = stored code, re-validated against the current PROMOS list
+   (so a code that gets deactivated/expired in the admin stops working). */
+function getPromo() { return findPromo(localStorage.getItem(PROMO_KEY)); }
 function setPromo(v) { if (v) localStorage.setItem(PROMO_KEY, v); else localStorage.removeItem(PROMO_KEY); }
 function getZone() { return localStorage.getItem(ZONE_KEY) === 'outside' ? 'outside' : 'casablanca'; }
 function setZone(z) { localStorage.setItem(ZONE_KEY, z === 'outside' ? 'outside' : 'casablanca'); }
@@ -294,16 +300,19 @@ function updateCartCount() {
 /* single source of truth for the order maths */
 function computeTotals() {
   const subtotal = cartSubtotal();
-  const promo = getPromo();
+  const applied = getPromo();
+  const promoMin = applied ? Number(applied.min || 0) : 0;
   let discount = 0;
-  if (promo && subtotal >= PROMO_MIN) {
-    discount = PROMO_TYPE === 'fixed' ? Math.min(PROMO_VALUE, subtotal) : Math.round(subtotal * (PROMO_VALUE / 100));
+  if (applied && subtotal >= promoMin) {
+    discount = applied.type === 'fixed'
+      ? Math.min(Number(applied.value), subtotal)
+      : Math.round(subtotal * (Number(applied.value) / 100));
   }
   const zone = getZone();
   const fee = subtotal >= SHIP_FREE_THRESHOLD ? 0 : SHIP_FEE;
   const shipping = (zone === 'casablanca' && SHIP_CASA_FREE) ? 0 : fee;
   const total = Math.max(0, subtotal - discount + shipping);
-  return { subtotal, promo, discount, zone, shipping, total };
+  return { subtotal, promo: applied ? applied.code : null, promoMin, discount, zone, shipping, total };
 }
 
 /* ---------------- Cart drawer ---------------- */
@@ -413,10 +422,12 @@ function renderCartPage() {
         <div class="cart-promo">
           <label class="cart-sub-label">${t('cart_promo_label')}</label>
           <div class="cart-promo__row">
-            <input type="text" id="promoInput" placeholder="${t('cart_promo_ph')}" value="${promoOn ? PROMO_CODE : ''}" ${promoOn ? 'disabled' : ''} autocomplete="off" spellcheck="false">
+            <input type="text" id="promoInput" placeholder="${t('cart_promo_ph')}" value="${promoOn ? T.promo : ''}" ${promoOn ? 'disabled' : ''} autocomplete="off" spellcheck="false">
             <button class="btn btn--ghost btn--sm" id="promoApply">${promoOn ? t('cart_remove') : t('cart_promo_apply')}</button>
           </div>
-          <p class="cart-promo__msg ${promoOn ? 'ok' : ''}" id="promoMsg">${promoOn ? ICONS.check + ' ' + t('cart_promo_ok') : ''}</p>
+          <p class="cart-promo__msg ${promoOn ? (T.discount > 0 ? 'ok' : 'bad') : ''}" id="promoMsg">${
+            promoOn ? (T.discount > 0 ? ICONS.check + ' ' + t('cart_promo_ok') : t('cart_promo_min', { min: formatPrice(T.promoMin) })) : ''
+          }</p>
         </div>
 
         <div class="cart-zone">
@@ -449,8 +460,8 @@ function renderCartPage() {
   const promoMsg = document.getElementById('promoMsg');
   document.getElementById('promoApply').onclick = () => {
     if (getPromo()) { setPromo(null); renderCartPage(); return; }
-    const code = (promoInput.value || '').trim().toUpperCase();
-    if (code === PROMO_CODE) { setPromo(PROMO_CODE); renderCartPage(); }
+    const found = findPromo(promoInput.value);
+    if (found) { setPromo(found.code); renderCartPage(); }
     else { promoMsg.className = 'cart-promo__msg bad'; promoMsg.textContent = t('cart_promo_bad'); }
   };
   // zone -> instant recalc
@@ -466,7 +477,7 @@ function waOrderCart() {
   let msg = `${t('wa_hello')}${NL}${NL}${t('wa_want')}${NL}`;
   cart.forEach(i => { const p = PRODUCTS.find(x => x.id === i.id); if (p) msg += `• ${p.name} ×${i.qty}${NL}`; });
   msg += `${NL}${t('wa_subtotal')} : ${formatPrice(T.subtotal)}${NL}`;
-  if (T.promo) msg += `${t('wa_promo')} : ${PROMO_CODE}${NL}${t('wa_discount')} : −${formatPrice(T.discount)}${NL}`;
+  if (T.promo && T.discount > 0) msg += `${t('wa_promo')} : ${T.promo}${NL}${t('wa_discount')} : −${formatPrice(T.discount)}${NL}`;
   msg += `${t('wa_shipping')} : ${T.zone === 'outside' ? t('cart_zone_out') : t('cart_zone_casa')}${NL}`;
   msg += `${t('wa_shipping_fee')} : ${T.shipping === 0 ? t('wa_free') : formatPrice(T.shipping)}${NL}`;
   msg += `${t('wa_total')} : ${formatPrice(T.total)}${NL}${NL}`;
@@ -475,7 +486,7 @@ function waOrderCart() {
   // Persist the order so it appears in the admin (silent no-op if offline)
   if (window.Store && Store.saveOrder) {
     const order = { subtotal: T.subtotal, discount: T.discount, shipping: T.shipping, total: T.total,
-      promo_code: T.promo ? PROMO_CODE : null, shipping_zone: T.zone, status: 'pending' };
+      promo_code: T.discount > 0 ? T.promo : null, shipping_zone: T.zone, status: 'pending' };
     const items = cart.map(i => { const p = PRODUCTS.find(x => x.id === i.id); return { product_name: p ? p.name : i.id, qty: i.qty, unit_price: p ? p.price : 0 }; });
     Store.saveOrder(order, items);
   }
@@ -789,7 +800,14 @@ function applySettings(S, promo) {
   if (typeof shp.free_threshold === 'number') SHIP_FREE_THRESHOLD = shp.free_threshold;
   if (typeof shp.casablanca_free === 'boolean') SHIP_CASA_FREE = shp.casablanca_free;
   if (shp.eta && typeof UI !== 'undefined') { UI.fr.cart_eta_val = shp.eta; }
-  if (promo) { PROMO_CODE = String(promo.code).toUpperCase(); PROMO_TYPE = promo.discount_type; PROMO_VALUE = Number(promo.discount_value); PROMO_MIN = Number(promo.min_order || 0); }
+  // All active codes become valid in the cart; the featured one drives the announcement bar
+  if (window.Store && Store.promos && Store.promos.length) {
+    PROMOS = Store.promos.map(p => ({
+      code: String(p.code).toUpperCase(), type: p.discount_type,
+      value: Number(p.discount_value), min: Number(p.min_order || 0)
+    }));
+  }
+  if (promo) PROMO_CODE = String(promo.code).toUpperCase();
 
   // Homepage/i18n text overrides (FR)
   if (typeof UI !== 'undefined') {
