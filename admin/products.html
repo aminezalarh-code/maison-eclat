@@ -19,20 +19,20 @@
       const db = Admin.db(); const { money, esc, el } = Admin;
       const LOW = 5;
 
-      Admin.mountShell('products.html', 'Produits',
-        `<a class="btn btn--gold" href="product-edit.html">+ Nouveau produit</a>`,
+      Admin.mountShell('products.html', 'Créations',
+        `<a class="btn btn--gold" href="product-edit.html">+ Ajouter une création</a>`,
         `<div class="toolbar">
            <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
-             <input id="q" placeholder="Rechercher un produit…" /></div>
-           <select class="select" id="fCat" style="max-width:180px"><option value="">Toutes catégories</option></select>
+             <input id="q" placeholder="Rechercher une création…" /></div>
+           <select class="select" id="fCat" style="max-width:180px"><option value="">Toutes les collections</option></select>
            <select class="select" id="fStatus" style="max-width:170px">
              <option value="">Tous statuts</option><option value="active">Actif</option>
              <option value="draft">Brouillon</option><option value="out_of_stock">Rupture</option>
              <option value="archived">Archivé</option></select>
          </div>
          <div class="card"><div class="tbl-wrap"><table class="tbl">
-           <thead><tr><th>Produit</th><th>Catégorie</th><th>Prix</th><th>Stock</th><th>Statut</th><th>Mise en avant</th><th class="right">Actions</th></tr></thead>
-           <tbody id="rows"><tr><td colspan="7"><div class="empty">Chargement…</div></td></tr></tbody>
+           <thead><tr><th>Création</th><th>Collection</th><th>Prix</th><th>Stock</th><th>Statut</th><th>Mise en avant</th><th class="right"></th></tr></thead>
+           <tbody id="rows"><tr><td colspan="7"><div class="empty">Un instant…</div></td></tr></tbody>
          </table></div></div>`);
 
       const { data: cats } = await db.from('categories').select('id,slug,name_fr').order('display_order');
@@ -65,7 +65,7 @@
         let list = ALL.filter(p =>
           (!q || (p.name || '').toLowerCase().includes(q) || (p.sku || '').toLowerCase().includes(q)) &&
           (!fc || p.category_id === fc) && (!fs || p.status === fs));
-        if (!list.length) { el('rows').innerHTML = `<tr><td colspan="7"><div class="empty">Aucun produit.</div></td></tr>`; return; }
+        if (!list.length) { el('rows').innerHTML = `<tr><td colspan="7"><div class="empty">Votre prochaine création mérite sa place ici.</div></td></tr>`; return; }
         el('rows').innerHTML = list.map(p => `<tr>
           <td><div style="display:flex;align-items:center;gap:12px">
             <img class="thumb" src="${esc(p.featured_image) || ''}" alt="" onerror="this.style.visibility='hidden'">
@@ -85,13 +85,13 @@
           const to = b.dataset.st === 'archived' ? 'active' : 'archived';
           const { error } = await db.from('products').update({ status: to }).eq('id', b.dataset.arch);
           if (error) return Admin.toast(error.message, 'bad');
-          Admin.toast(to === 'archived' ? 'Produit archivé' : 'Produit restauré'); load();
+          Admin.toast(to === 'archived' ? '✨ Création mise à l’écrin (archivée).' : '✨ Création restaurée dans votre collection.'); load();
         });
         el('rows').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
-          if (!confirm(`Supprimer définitivement « ${b.dataset.name} » ?`)) return;
+          if (!confirm(`Retirer définitivement « ${b.dataset.name} » de votre maison ?`)) return;
           const { error } = await db.from('products').delete().eq('id', b.dataset.del);
           if (error) return Admin.toast(error.message, 'bad');
-          Admin.toast('Produit supprimé'); load();
+          Admin.toast('La création a été retirée.'); load();
         });
       }
 

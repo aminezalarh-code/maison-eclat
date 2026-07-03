@@ -18,8 +18,8 @@
       const user = await Admin.requireAdmin(); if (!user) return;
       const db = Admin.db(); const { esc, el, slugify, toast, openModal } = Admin;
 
-      Admin.mountShell('categories.html', 'Catégories',
-        `<button class="btn btn--gold" id="add">+ Nouvelle catégorie</button>`,
+      Admin.mountShell('categories.html', 'Collections',
+        `<button class="btn btn--gold" id="add">+ Nouvelle collection</button>`,
         `<div class="card"><div class="tbl-wrap"><table class="tbl">
           <thead><tr><th>Image</th><th>Nom (FR)</th><th>Nom (EN)</th><th>Slug</th><th>Ordre</th><th class="right">Actions</th></tr></thead>
           <tbody id="rows"><tr><td colspan="6"><div class="empty">Chargement…</div></td></tr></tbody>
@@ -34,25 +34,25 @@
           <td><code>${esc(c.slug)}</code></td><td>${c.display_order}</td>
           <td class="right"><button class="btn btn--sm" data-edit='${esc(JSON.stringify(c))}'>Modifier</button>
             <button class="btn btn--sm btn--danger" data-del="${c.id}" data-n="${esc(c.name_fr)}">✕</button></td></tr>`).join('')
-          : `<tr><td colspan="6"><div class="empty">Aucune catégorie.</div></td></tr>`;
+          : `<tr><td colspan="6"><div class="empty">Créez votre première collection.</div></td></tr>`;
         el('rows').querySelectorAll('[data-edit]').forEach(b => b.onclick = () => form(JSON.parse(b.dataset.edit)));
         el('rows').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
-          if (!confirm(`Supprimer « ${b.dataset.n} » ? Les produits liés ne seront pas supprimés.`)) return;
+          if (!confirm(`Retirer « ${b.dataset.n} » ? Les créations liées ne seront pas supprimées.`)) return;
           const { error } = await db.from('categories').delete().eq('id', b.dataset.del);
-          toast(error ? error.message : 'Catégorie supprimée', error ? 'bad' : 'ok'); if (!error) load();
+          toast(error ? error.message : 'La collection a été retirée.', error ? 'bad' : 'ok'); if (!error) load();
         });
       }
 
       function form(c) {
         c = c || {};
-        const m = openModal(c.id ? 'Modifier la catégorie' : 'Nouvelle catégorie', `
+        const m = openModal(c.id ? 'Modifier la collection' : 'Nouvelle collection', `
           <div class="field"><label>Nom (FR)</label><input class="input" id="cName" value="${esc(c.name_fr)||''}"></div>
           <div class="field"><label>Nom (EN)</label><input class="input" id="cNameEn" value="${esc(c.name_en)||''}"></div>
           <div class="row">
             <div class="field"><label>Slug</label><input class="input" id="cSlug" value="${esc(c.slug)||''}" placeholder="auto"></div>
             <div class="field"><label>Ordre d'affichage</label><input class="input" id="cOrder" type="number" value="${c.display_order??0}"></div>
           </div>
-          <div class="field"><label>Image de catégorie</label>
+          <div class="field"><label>Image de la collection</label>
             <div style="display:flex;gap:10px;align-items:center">
               <img class="thumb" id="cImgPrev" src="${esc(c.image_url)||''}" style="width:54px;height:64px" onerror="this.style.visibility='hidden'">
               <input type="file" id="cFile" accept="image/*"><input type="hidden" id="cImg" value="${esc(c.image_url)||''}">
@@ -72,7 +72,7 @@
           if (!rec.name_fr) return toast('Le nom est requis', 'bad');
           const res = c.id ? await db.from('categories').update(rec).eq('id', c.id) : await db.from('categories').insert(rec);
           if (res.error) return toast(res.error.message, 'bad');
-          toast('Catégorie enregistrée'); m.close(); load();
+          toast('✨ Votre collection a été enregistrée.'); m.close(); load();
         };
       }
       el('add').onclick = () => form();

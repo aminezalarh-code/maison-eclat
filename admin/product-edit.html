@@ -48,16 +48,16 @@
       const catOpts = (sel) => (cats||[]).map(c => `<option value="${c.id}" ${c.id===sel?'selected':''}>${esc(c.name_fr)}</option>`).join('');
       const v = (x) => x == null ? '' : esc(x);
 
-      const content = Admin.mountShell('products.html', isNew ? 'Nouveau produit' : 'Modifier le produit',
-        `<a class="btn" href="products.html">← Retour</a><button class="btn btn--gold" id="save">Enregistrer</button>`,
+      const content = Admin.mountShell('products.html', isNew ? 'Nouvelle création' : 'Votre création',
+        `<a class="btn" href="products.html">← Mes créations</a><button class="btn btn--gold" id="save">Enregistrer</button>`,
         `<div class="pe-grid">
           <div style="display:flex;flex-direction:column;gap:18px">
             <div class="card card--pad">
-              <h3 style="margin-bottom:14px">Détails</h3>
-              <div class="field"><label>Nom du produit</label><input class="input" id="name" value="${v(P.name)}"></div>
+              <h3 style="margin-bottom:14px">Informations</h3>
+              <div class="field"><label>Nom de la création</label><input class="input" id="name" value="${v(P.name)}"></div>
               <div class="row">
                 <div class="field"><label>Slug (URL)</label><input class="input" id="slug" value="${v(P.slug)}" placeholder="auto"></div>
-                <div class="field"><label>Catégorie</label><select class="select" id="category_id"><option value="">—</option>${catOpts(P.category_id)}</select></div>
+                <div class="field"><label>Collection</label><select class="select" id="category_id"><option value="">—</option>${catOpts(P.category_id)}</select></div>
               </div>
               <div class="field"><label>Matière</label><input class="input" id="material" value="${v(P.material)}" placeholder="Acier inoxydable"></div>
               <div class="field"><label>Description</label><textarea class="textarea" id="description">${v(P.description)}</textarea></div>
@@ -65,15 +65,15 @@
             </div>
 
             <div class="card card--pad" id="variantsCard">
-              <h3 style="margin-bottom:6px">Variantes</h3>
-              <p class="muted" style="font-size:.8rem;margin-bottom:12px">Couleurs / finitions avec stock et prix propres.</p>
+              <h3 style="margin-bottom:6px">Couleurs</h3>
+              <p class="muted" style="font-size:.8rem;margin-bottom:12px">Déclinaisons — doré, argenté, or rose… — avec stock et prix propres.</p>
               <div id="variants"></div>
-              <button class="btn btn--sm" id="addVar" style="margin-top:12px">+ Ajouter une variante</button>
+              <button class="btn btn--sm" id="addVar" style="margin-top:12px">+ Ajouter une couleur</button>
             </div>
 
             <div class="card card--pad" id="imagesCard">
-              <h3 style="margin-bottom:12px">Images</h3>
-              <div class="drop" id="drop">Glissez-déposez des images ici, ou cliquez pour choisir</div>
+              <h3 style="margin-bottom:12px">Galerie</h3>
+              <div class="drop" id="drop">Déposez vos images ici, ou cliquez pour les choisir</div>
               <input type="file" id="file" accept="image/*" multiple hidden>
               <div class="imgs" id="imgs" style="margin-top:14px"></div>
             </div>
@@ -81,7 +81,7 @@
 
           <div style="display:flex;flex-direction:column;gap:18px">
             <div class="card card--pad">
-              <h3 style="margin-bottom:14px">Prix & promo</h3>
+              <h3 style="margin-bottom:14px">Prix</h3>
               <div class="field"><label>Prix (MAD)</label><input class="input" id="price" type="number" step="1" value="${P.price ?? 0}"></div>
               <div class="field"><label>Prix promo (MAD)</label><input class="input" id="sale_price" type="number" step="1" value="${P.sale_price ?? ''}" placeholder="—"></div>
               <div class="row">
@@ -90,7 +90,7 @@
               </div>
             </div>
             <div class="card card--pad">
-              <h3 style="margin-bottom:14px">Stock & statut</h3>
+              <h3 style="margin-bottom:14px">Stock</h3>
               <div class="row">
                 <div class="field"><label>Stock</label><input class="input" id="stock" type="number" step="1" value="${P.stock ?? 0}"></div>
                 <div class="field"><label>SKU</label><input class="input" id="sku" value="${v(P.sku)}"></div>
@@ -136,20 +136,20 @@
           is_best_seller: el('is_best_seller').checked,
           is_new: el('is_new').checked
         };
-        if (!rec.name) { toast('Le nom est requis', 'bad'); btn.disabled=false; btn.textContent='Enregistrer'; return; }
+        if (!rec.name) { toast('Donnez un nom à votre création', 'bad'); btn.disabled=false; btn.textContent='Enregistrer'; return; }
         let res;
         if (isNew) res = await db.from('products').insert(rec).select('id').single();
         else res = await db.from('products').update(rec).eq('id', id).select('id').single();
         btn.disabled = false; btn.textContent = 'Enregistrer';
         if (res.error) { toast(res.error.message, 'bad'); return; }
-        toast('Produit enregistré');
+        toast('✨ Votre création a été enregistrée avec succès.');
         if (isNew) location.href = 'product-edit.html?id=' + res.data.id;
       };
 
       // sections that need an existing product id
       if (isNew) {
-        el('variantsCard').innerHTML = '<h3>Variantes</h3><p class="muted" style="margin-top:8px">Enregistrez d’abord le produit pour gérer les variantes.</p>';
-        el('imagesCard').innerHTML = '<h3>Images</h3><p class="muted" style="margin-top:8px">Enregistrez d’abord le produit pour ajouter des images.</p>';
+        el('variantsCard').innerHTML = '<h3>Couleurs</h3><p class="muted" style="margin-top:8px">Enregistrez d’abord votre création pour ajouter ses couleurs.</p>';
+        el('imagesCard').innerHTML = '<h3>Galerie</h3><p class="muted" style="margin-top:8px">Enregistrez d’abord votre création pour composer sa galerie.</p>';
         return;
       }
 
@@ -172,16 +172,16 @@
             const f = inp.dataset.f;
             const val = (f === 'stock' || f === 'price_diff') ? Number(inp.value || 0) : (inp.value.trim() || null);
             const { error } = await db.from('product_variants').update({ [f]: val }).eq('id', vid);
-            toast(error ? error.message : 'Variante mise à jour', error ? 'bad' : 'ok');
+            toast(error ? error.message : 'Couleur mise à jour', error ? 'bad' : 'ok');
           }));
         });
         el('variants').querySelectorAll('[data-delv]').forEach(b => b.onclick = async () => {
-          if (!confirm('Supprimer cette variante ?')) return;
+          if (!confirm('Retirer cette couleur ?')) return;
           await db.from('product_variants').delete().eq('id', b.dataset.delv); loadVariants();
         });
       }
       el('addVar').onclick = async () => {
-        const { error } = await db.from('product_variants').insert({ product_id: id, name: 'Nouvelle variante', stock: 0 });
+        const { error } = await db.from('product_variants').insert({ product_id: id, name: 'Nouvelle couleur', stock: 0 });
         if (error) return toast(error.message, 'bad');
         loadVariants();
       };
@@ -208,7 +208,7 @@
           await db.from('product_images').update({ is_featured: false }).eq('product_id', id);
           await db.from('product_images').update({ is_featured: true }).eq('id', b.dataset.feat);
           await db.from('products').update({ featured_image: b.dataset.url }).eq('id', id);
-          toast('Image principale définie'); loadImages();
+          toast('✨ Image principale choisie.'); loadImages();
         });
         const swap = async (aId, dir) => {
           const arr = imgs; const idx = arr.findIndex(x => x.id === aId); const j = idx + dir;
@@ -239,7 +239,7 @@
             if (feat) await db.from('products').update({ featured_image: url }).eq('id', id);
           } catch (e) { toast('Échec upload: ' + (e.message || e), 'bad'); }
         }
-        toast('Images ajoutées'); loadImages();
+        toast('✨ Ajoutées à votre galerie.'); loadImages();
       }
       const drop = el('drop'), file = el('file');
       drop.onclick = () => file.click();

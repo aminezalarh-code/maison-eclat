@@ -49,37 +49,26 @@
     return user;
   }
 
-  /* ---------- app shell (sidebar + topbar) ---------- */
+  /* ---------- app shell : la Maison ---------- */
   const NAV = [
-    ['index.html',      'Tableau de bord', 'grid'],
-    ['products.html',   'Produits',        'tag'],
-    ['orders.html',     'Commandes',       'bag'],
-    ['categories.html', 'Catégories',      'folder'],
-    ['filters.html',    'Filtres',         'sliders'],
-    ['promos.html',     'Codes promo',     'ticket'],
-    ['media.html',      'Médiathèque',     'image'],
-    ['homepage.html',   'Page d’accueil',  'home'],
-    ['settings.html',   'Réglages',        'gear']
+    ['index.html',      'Ma Maison',       '🏛'],
+    ['products.html',   'Créations',       '✨'],
+    ['categories.html', 'Collections',     '💎'],
+    ['filters.html',    'Filtres',         '🎀'],
+    ['promos.html',     'Offres Privées',  '🎁'],
+    ['orders.html',     'Commandes',       '📦'],
+    ['media.html',      'Galerie',         '🖼'],
+    ['homepage.html',   'Page d’accueil',  '🌸'],
+    ['settings.html',   'Paramètres',      '⚙️']
   ];
-  const IC = {
-    grid:'<path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>',
-    tag:'<path d="M3 12l9-9 8 8-9 9zM7.5 7.5h.01"/>',
-    bag:'<path d="M6 7h12l-1 13H7zM9 7a3 3 0 0 1 6 0"/>',
-    folder:'<path d="M3 7h6l2 2h10v11H3z"/>',
-    sliders:'<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="8" cy="18" r="2"/>',
-    ticket:'<path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/>',
-    image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/>',
-    home:'<path d="M3 11l9-8 9 8M5 10v10h14V10"/>',
-    gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>'
-  };
   function shell(active) {
     const links = NAV.map(([href, label, ic]) =>
       `<a class="asb__link ${href === active ? 'active' : ''}" href="${href}">
-         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">${IC[ic] || ''}</svg>
+         <span class="asb__ic">${ic}</span>
          <span>${label}</span></a>`).join('');
     return `
       <aside class="asb" id="asb">
-        <a class="asb__brand" href="index.html"><b>BELORYA</b><span>Admin</span></a>
+        <a class="asb__brand" href="index.html"><b>BELORYA</b><span>Maison</span></a>
         <nav class="asb__nav">${links}</nav>
         <button class="asb__logout" id="btnLogout">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 12H3M9 6l-6 6 6 6M14 4h5v16h-5"/></svg>

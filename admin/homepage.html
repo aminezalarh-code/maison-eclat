@@ -85,7 +85,7 @@
           newsletter_title_fr: el('nl_title').value, newsletter_sub_fr: el('nl_sub').value, footer_desc_fr: el('ft_desc').value
         };
         const { error } = await db.from('settings').upsert({ key: 'homepage', value });
-        toast(error ? error.message : 'Page d’accueil enregistrée', error ? 'bad' : 'ok');
+        toast(error ? error.message : '🌸 Votre page d’accueil a été enregistrée.', error ? 'bad' : 'ok');
       };
     })();
   </script>

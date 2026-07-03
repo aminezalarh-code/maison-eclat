@@ -18,8 +18,8 @@
       const user = await Admin.requireAdmin(); if (!user) return;
       const db = Admin.db(); const { esc, el, toast, money, openModal } = Admin;
 
-      Admin.mountShell('promos.html', 'Codes promo',
-        `<button class="btn btn--gold" id="add">+ Nouveau code</button>`,
+      Admin.mountShell('promos.html', 'Offres Privées',
+        `<button class="btn btn--gold" id="add">+ Nouvelle offre</button>`,
         `<div class="card"><div class="tbl-wrap"><table class="tbl">
           <thead><tr><th>Code</th><th>Réduction</th><th>Min. commande</th><th>Expiration</th><th>Utilisations</th><th>Statut</th><th class="right">Actions</th></tr></thead>
           <tbody id="rows"><tr><td colspan="7"><div class="empty">Chargement…</div></td></tr></tbody>
@@ -42,20 +42,20 @@
             <button class="btn btn--sm" data-tog="${p.id}" data-a="${p.active}">${p.active ? 'Désactiver' : 'Activer'}</button>
             <button class="btn btn--sm" data-edit='${esc(JSON.stringify(p))}'>Modifier</button>
             <button class="btn btn--sm btn--danger" data-del="${p.id}">✕</button></td></tr>`).join('')
-          : `<tr><td colspan="7"><div class="empty">Aucun code promo.</div></td></tr>`;
+          : `<tr><td colspan="7"><div class="empty">Créez votre première offre exclusive.</div></td></tr>`;
         el('rows').querySelectorAll('[data-tog]').forEach(b => b.onclick = async () => {
           await db.from('promo_codes').update({ active: b.dataset.a !== 'true' }).eq('id', b.dataset.tog); load();
         });
         el('rows').querySelectorAll('[data-edit]').forEach(b => b.onclick = () => form(JSON.parse(b.dataset.edit)));
         el('rows').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
-          if (!confirm('Supprimer ce code ?')) return;
-          await db.from('promo_codes').delete().eq('id', b.dataset.del); toast('Code supprimé'); load();
+          if (!confirm('Retirer cette offre ?')) return;
+          await db.from('promo_codes').delete().eq('id', b.dataset.del); toast('L’offre a été retirée.'); load();
         });
       }
 
       function form(p) {
         p = p || { discount_type: 'percent', active: true, min_order: 0 };
-        const m = openModal(p.id ? 'Modifier le code' : 'Nouveau code promo', `
+        const m = openModal(p.id ? 'Modifier l’offre' : 'Nouvelle offre exclusive', `
           <div class="row">
             <div class="field"><label>Code</label><input class="input" id="pCode" value="${esc(p.code)||''}" style="text-transform:uppercase"></div>
             <div class="field"><label>Type</label><select class="select" id="pType">
@@ -87,7 +87,7 @@
           if (!(rec.discount_value > 0)) return toast('Valeur invalide', 'bad');
           const res = p.id ? await db.from('promo_codes').update(rec).eq('id', p.id) : await db.from('promo_codes').insert(rec);
           if (res.error) return toast(res.error.message, 'bad');
-          toast('Code enregistré'); m.close(); load();
+          toast('🎁 Votre campagne est prête.'); m.close(); load();
         };
       }
       el('add').onclick = () => form();

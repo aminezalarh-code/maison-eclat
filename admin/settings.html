@@ -24,7 +24,7 @@
       const soc = g('socials'), shp = g('shipping'), seo = g('seo'), brand = g('brand');
       const v = (x) => x == null ? '' : esc(x);
 
-      Admin.mountShell('settings.html', 'Réglages', '', `
+      Admin.mountShell('settings.html', 'Paramètres', '', `
         <div class="grid" style="grid-template-columns:1fr 1fr;gap:18px" id="wrap">
           <div class="card card--pad">
             <h3 style="margin-bottom:14px">Réseaux sociaux & contact</h3>
@@ -80,7 +80,7 @@
         const b = el(btn); b.disabled = true; b.textContent = 'Enregistrement…';
         const { error } = await db.from('settings').upsert({ key, value });
         b.disabled = false; b.textContent = 'Enregistrer';
-        toast(error ? error.message : 'Réglages enregistrés', error ? 'bad' : 'ok');
+        toast(error ? error.message : '✨ Vos paramètres ont été enregistrés.', error ? 'bad' : 'ok');
       }
       const upl = async (fileEl, hidden, prev, kind) => {
         if (!el(fileEl).files[0]) return;
@@ -107,7 +107,7 @@
           title: el('se_title').value.trim(), description: el('se_desc').value.trim(),
           ga: el('se_ga').value.trim(), meta_pixel: el('se_px').value.trim()
         }});
-        toast('Réglages enregistrés');
+        toast('✨ Vos paramètres ont été enregistrés.');
       };
     })();
   </script>

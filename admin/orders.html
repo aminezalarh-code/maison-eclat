@@ -25,7 +25,7 @@
       Admin.mountShell('orders.html', 'Commandes',
         `<select class="select" id="fStatus" style="max-width:180px"><option value="">Tous statuts</option>${STATUSES.map(([k,l]) => `<option value="${k}">${l}</option>`).join('')}</select>`,
         `<div class="card"><div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th>#</th><th>Date</th><th>Client</th><th>Total</th><th>Zone</th><th>Promo</th><th>Statut</th><th class="right"></th></tr></thead>
+          <thead><tr><th>#</th><th>Date</th><th>Cliente</th><th>Total</th><th>Zone</th><th>Offre</th><th>Statut</th><th class="right"></th></tr></thead>
           <tbody id="rows"><tr><td colspan="8"><div class="empty">Chargement…</div></td></tr></tbody>
         </table></div></div>`);
 
@@ -45,7 +45,7 @@
           <td>${o.promo_code ? `<code>${esc(o.promo_code)}</code>` : '—'}</td>
           <td>${pill(o.status)}</td>
           <td class="right"><button class="btn btn--sm" data-view="${o.id}">Voir</button></td></tr>`).join('')
-          : `<tr><td colspan="8"><div class="empty">Aucune commande.</div></td></tr>`;
+          : `<tr><td colspan="8"><div class="empty">Vos futures commandes apparaîtront ici.</div></td></tr>`;
         el('rows').querySelectorAll('[data-view]').forEach(b => b.onclick = () => view(b.dataset.view));
       }
       async function view(oid) {
@@ -56,7 +56,7 @@
           || '<tr><td colspan="3" class="muted">—</td></tr>';
         const m = openModal(`Commande #${o.id}`, `
           <div class="row" style="margin-bottom:14px">
-            <div><div class="muted" style="font-size:.75rem">Client</div><div>${esc(o.customer_name)||'—'}</div>
+            <div><div class="muted" style="font-size:.75rem">Cliente</div><div>${esc(o.customer_name)||'—'}</div>
               <div class="muted" style="font-size:.75rem;margin-top:8px">Téléphone</div><div>${esc(o.phone)||'—'}</div></div>
             <div><div class="muted" style="font-size:.75rem">Adresse</div><div>${esc(o.address)||'—'}</div>
               <div class="muted" style="font-size:.75rem;margin-top:8px">Zone</div><div>${o.shipping_zone==='outside'?'Hors Casablanca':'Casablanca'}</div></div>
@@ -75,7 +75,7 @@
         el('oSave').onclick = async () => {
           const { error } = await db.from('orders').update({ status: el('oStatus').value }).eq('id', o.id);
           if (error) return toast(error.message, 'bad');
-          toast('Statut mis à jour'); m.close(); load();
+          toast('✨ Statut mis à jour.'); m.close(); load();
         };
       }
       el('fStatus').onchange = render;
