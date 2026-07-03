@@ -264,13 +264,14 @@ function addToCart(id, qty = 1) {
   if (found) found.qty += qty; else cart.push({ id, qty });
   saveCart(cart);
   renderCart();
+  renderCartPage();
   toast(t('cart_added', { name: p.name }));
 }
 function setQty(id, qty) {
   let cart = getCart();
   if (qty <= 0) cart = cart.filter(i => i.id !== id);
   else { const it = cart.find(i => i.id === id); if (it) it.qty = qty; }
-  saveCart(cart); renderCart();
+  saveCart(cart); renderCart(); renderCartPage();
 }
 function cartSubtotal() {
   return getCart().reduce((s, i) => {
@@ -350,58 +351,103 @@ function renderCart() {
     </div>`;
   }).join('');
 
+  // Compact quick-preview only: subtotal + navigate to full cart page
+  foot.hidden = false;
+  foot.innerHTML = `
+    <div class="cart-foot__row subtotal"><span>${t('cart_subtotal')}</span><span>${formatPrice(cartSubtotal())}</span></div>
+    <a class="btn btn--gold btn--block" href="cart.html">${t('cart_view')}</a>
+    <button class="btn btn--ghost btn--block" id="cartContinue" style="margin-top:.7rem">${t('cart_continue')}</button>`;
+  document.getElementById('cartContinue').onclick = closeCart;
+}
+
+/* ---------------- Full cart page (checkout logic) ---------------- */
+function renderCartPage() {
+  const mount = document.getElementById('cart-page');
+  if (!mount) return;
+  const cart = getCart();
+  if (!cart.length) {
+    mount.innerHTML = `<div class="wrap"><div class="cart-page-empty">${ICONS.cart}
+      <p>${t('cart_empty_page')}</p>
+      <a class="btn btn--gold" href="collections.html">${t('cart_explore')}</a></div></div>`;
+    return;
+  }
   const T = computeTotals();
   const promoOn = !!T.promo;
   const zone = T.zone;
-  foot.hidden = false;
-  foot.innerHTML = `
-    <div class="cart-promo">
-      <label class="cart-sub-label">${t('cart_promo_label')}</label>
-      <div class="cart-promo__row">
-        <input type="text" id="promoInput" placeholder="${t('cart_promo_ph')}" value="${promoOn ? PROMO_CODE : ''}" ${promoOn ? 'disabled' : ''} autocomplete="off" spellcheck="false">
-        <button class="btn btn--ghost btn--sm" id="promoApply">${t('cart_promo_apply')}</button>
+  const trust = [t('pdp_check_casa'), t('pdp_check_250'), t('trust_cod'), t('trust_steel')];
+
+  mount.innerHTML = `
+    <div class="wrap cart-page__grid">
+      <div class="cart-page__items">
+        ${cart.map(i => {
+          const p = PRODUCTS.find(x => x.id === i.id); if (!p) return '';
+          return `<div class="cart-line">
+            <a class="cart-line__media" href="product.html?id=${p.id}">${productMedia(p)}</a>
+            <div class="cart-line__info">
+              <a href="product.html?id=${p.id}" class="cart-line__name">${p.name}</a>
+              <div class="cart-line__mat">${p.material}</div>
+              <div class="cart-line__controls">
+                <div class="qty">
+                  <button onclick="setQty('${p.id}',${i.qty-1})" aria-label="${t('pdp_dec')}">−</button>
+                  <span>${i.qty}</span>
+                  <button onclick="setQty('${p.id}',${i.qty+1})" aria-label="${t('pdp_inc')}">+</button>
+                </div>
+                <button class="cart-item__remove" onclick="setQty('${p.id}',0)">${t('cart_remove')}</button>
+              </div>
+            </div>
+            <div class="cart-line__price">${formatPrice(p.price * i.qty)}</div>
+          </div>`;
+        }).join('')}
       </div>
-      <p class="cart-promo__msg ${promoOn ? 'ok' : ''}" id="promoMsg">${promoOn ? ICONS.check + ' ' + t('cart_promo_ok') : ''}</p>
-    </div>
 
-    <div class="cart-zone">
-      <label class="cart-sub-label">${t('cart_zone_label')}</label>
-      <div class="cart-zone__opts">
-        <label class="cart-zone__opt ${zone==='casablanca'?'active':''}"><input type="radio" name="zone" value="casablanca" ${zone==='casablanca'?'checked':''}><span>${t('cart_zone_casa')}</span></label>
-        <label class="cart-zone__opt ${zone==='outside'?'active':''}"><input type="radio" name="zone" value="outside" ${zone==='outside'?'checked':''}><span>${t('cart_zone_out')}</span></label>
-      </div>
-    </div>
+      <aside class="cart-summary-card">
+        <h2 class="cart-summary-card__title">${t('cart_summary_title')}</h2>
 
-    <div class="cart-summary">
-      <div class="cart-foot__row"><span>${t('cart_subtotal')}</span><span>${formatPrice(T.subtotal)}</span></div>
-      ${T.discount > 0 ? `<div class="cart-foot__row discount"><span>${t('cart_discount')}</span><span>−${formatPrice(T.discount)}</span></div>` : ''}
-      <div class="cart-foot__row"><span>${t('cart_shipping')}</span><span>${T.shipping === 0 ? t('cart_free') : formatPrice(T.shipping)}</span></div>
-      <div class="cart-foot__row total"><span>${t('cart_total')}</span><span>${formatPrice(T.total)}</span></div>
-      <div class="cart-foot__row eta"><span>${t('cart_eta_label')}</span><span>${t('cart_eta_val')}</span></div>
-    </div>
+        <div class="cart-promo">
+          <label class="cart-sub-label">${t('cart_promo_label')}</label>
+          <div class="cart-promo__row">
+            <input type="text" id="promoInput" placeholder="${t('cart_promo_ph')}" value="${promoOn ? PROMO_CODE : ''}" ${promoOn ? 'disabled' : ''} autocomplete="off" spellcheck="false">
+            <button class="btn btn--ghost btn--sm" id="promoApply">${promoOn ? t('cart_remove') : t('cart_promo_apply')}</button>
+          </div>
+          <p class="cart-promo__msg ${promoOn ? 'ok' : ''}" id="promoMsg">${promoOn ? ICONS.check + ' ' + t('cart_promo_ok') : ''}</p>
+        </div>
 
-    <button class="btn btn--gold btn--block" id="cartWa">${ICONS.wa} ${t('cart_wa')}</button>`;
+        <div class="cart-zone">
+          <label class="cart-sub-label">${t('cart_zone_label')}</label>
+          <div class="cart-zone__opts">
+            <label class="cart-zone__opt ${zone==='casablanca'?'active':''}"><input type="radio" name="zone" value="casablanca" ${zone==='casablanca'?'checked':''}><span>${t('cart_zone_casa')}</span></label>
+            <label class="cart-zone__opt ${zone==='outside'?'active':''}"><input type="radio" name="zone" value="outside" ${zone==='outside'?'checked':''}><span>${t('cart_zone_out')}</span></label>
+          </div>
+        </div>
 
-  // promo apply
+        <div class="cart-summary">
+          <div class="cart-foot__row"><span>${t('cart_subtotal')}</span><span>${formatPrice(T.subtotal)}</span></div>
+          ${T.discount > 0 ? `<div class="cart-foot__row discount"><span>${t('cart_discount')}</span><span>−${formatPrice(T.discount)}</span></div>` : ''}
+          <div class="cart-foot__row"><span>${t('cart_shipping')}</span><span>${T.shipping === 0 ? t('cart_free') : formatPrice(T.shipping)}</span></div>
+          <div class="cart-foot__row total"><span>${t('cart_total')}</span><span>${formatPrice(T.total)}</span></div>
+          <div class="cart-foot__row eta"><span>${t('cart_eta_label')}</span><span>${t('cart_eta_val')}</span></div>
+        </div>
+
+        <button class="btn btn--gold btn--block" id="cartWa">${ICONS.wa} ${t('cart_wa')}</button>
+        <a class="btn btn--ghost btn--block" href="collections.html" style="margin-top:.7rem">${t('cart_continue')}</a>
+
+        <ul class="cart-trust">
+          ${trust.map(x => `<li>${ICONS.check}<span>${x}</span></li>`).join('')}
+        </ul>
+      </aside>
+    </div>`;
+
+  // promo
   const promoInput = document.getElementById('promoInput');
   const promoMsg = document.getElementById('promoMsg');
   document.getElementById('promoApply').onclick = () => {
-    if (getPromo()) { setPromo(null); renderCart(); return; } // second click clears
+    if (getPromo()) { setPromo(null); renderCartPage(); return; }
     const code = (promoInput.value || '').trim().toUpperCase();
-    if (code === PROMO_CODE) {
-      setPromo(PROMO_CODE); renderCart();
-    } else {
-      promoMsg.className = 'cart-promo__msg bad';
-      promoMsg.textContent = t('cart_promo_bad');
-    }
+    if (code === PROMO_CODE) { setPromo(PROMO_CODE); renderCartPage(); }
+    else { promoMsg.className = 'cart-promo__msg bad'; promoMsg.textContent = t('cart_promo_bad'); }
   };
-  if (getPromo()) document.getElementById('promoApply').textContent = t('cart_remove');
-
-  // zone radios -> instant recalc
-  foot.querySelectorAll('input[name="zone"]').forEach(r => r.addEventListener('change', () => {
-    setZone(r.value); renderCart();
-  }));
-
+  // zone -> instant recalc
+  mount.querySelectorAll('input[name="zone"]').forEach(r => r.addEventListener('change', () => { setZone(r.value); renderCartPage(); }));
   document.getElementById('cartWa').onclick = waOrderCart;
 }
 
@@ -714,6 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderBestSellers();
   renderCollectionsPage();
   renderProductPage();
+  renderCartPage();
   initNewsletter();
   initReveal();
 });
