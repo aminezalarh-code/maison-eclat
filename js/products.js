@@ -12,7 +12,7 @@ function imgs(slug, n) {
   return Array.from({ length: n }, (_, i) => `assets/products/${slug}/${i + 1}.jpeg`);
 }
 
-const PRODUCTS = [
+var PRODUCTS = [
   {
     id: 'reflet-lunaire',
     name: 'Reflet Lunaire',

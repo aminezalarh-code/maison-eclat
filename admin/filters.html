@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Filtres — BELORYA Admin</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="lib.js"></script>
+  <script>
+    (async () => {
+      const user = await Admin.requireAdmin(); if (!user) return;
+      const db = Admin.db(); const { esc, el, slugify, toast, openModal } = Admin;
+
+      const content = Admin.mountShell('filters.html', 'Filtres',
+        `<button class="btn btn--gold" id="add">+ Nouveau filtre</button>`,
+        `<p class="muted" style="margin-bottom:16px">Les filtres et leurs options apparaissent automatiquement sur la page Collection.</p>
+         <div id="groups" class="grid" style="gap:16px"><div class="empty">Chargement…</div></div>`);
+
+      async function load() {
+        const { data: filters } = await db.from('filters').select('*').order('display_order');
+        const { data: options } = await db.from('filter_options').select('*').order('display_order');
+        const byFilter = {}; (options||[]).forEach(o => (byFilter[o.filter_id] = byFilter[o.filter_id] || []).push(o));
+        el('groups').innerHTML = (filters && filters.length) ? filters.map(f => `
+          <div class="card">
+            <div class="card__head"><h3>${esc(f.name_fr)} <span class="muted" style="font-weight:400">(${esc(f.key)})</span></h3>
+              <span><button class="btn btn--sm" data-editf='${esc(JSON.stringify(f))}'>Renommer</button>
+              <button class="btn btn--sm btn--danger" data-delf="${f.id}">Supprimer</button></span></div>
+            <div class="card__body" style="padding:14px 18px">
+              <div class="tbl-wrap"><table class="tbl">
+                <thead><tr><th>Valeur</th><th>Libellé (FR)</th><th>Libellé (EN)</th><th class="right"></th></tr></thead>
+                <tbody>${(byFilter[f.id]||[]).map(o => `<tr>
+                  <td><code>${esc(o.value)}</code></td><td>${esc(o.label_fr)||''}</td><td>${esc(o.label_en)||''}</td>
+                  <td class="right"><button class="btn btn--sm btn--danger" data-delo="${o.id}">✕</button></td></tr>`).join('')
+                  || '<tr><td colspan="4" class="muted" style="padding:12px 18px">Aucune option.</td></tr>'}</tbody>
+              </table></div>
+              <button class="btn btn--sm" data-addo="${f.id}" style="margin-top:10px">+ Ajouter une option</button>
+            </div>
+          </div>`).join('') : '<div class="empty">Aucun filtre. Créez-en un.</div>';
+
+        el('groups').querySelectorAll('[data-editf]').forEach(b => b.onclick = () => filterForm(JSON.parse(b.dataset.editf)));
+        el('groups').querySelectorAll('[data-delf]').forEach(b => b.onclick = async () => {
+          if (!confirm('Supprimer ce filtre et toutes ses options ?')) return;
+          await db.from('filters').delete().eq('id', b.dataset.delf); load();
+        });
+        el('groups').querySelectorAll('[data-delo]').forEach(b => b.onclick = async () => {
+          await db.from('filter_options').delete().eq('id', b.dataset.delo); load();
+        });
+        el('groups').querySelectorAll('[data-addo]').forEach(b => b.onclick = () => optionForm(b.dataset.addo));
+      }
+
+      function filterForm(f) {
+        f = f || {};
+        const m = openModal(f.id ? 'Renommer le filtre' : 'Nouveau filtre', `
+          <div class="field"><label>Nom (FR)</label><input class="input" id="fName" value="${esc(f.name_fr)||''}"></div>
+          <div class="field"><label>Nom (EN)</label><input class="input" id="fNameEn" value="${esc(f.name_en)||''}"></div>
+          <div class="row"><div class="field"><label>Clé</label><input class="input" id="fKey" value="${esc(f.key)||''}" placeholder="auto" ${f.id?'disabled':''}></div>
+          <div class="field"><label>Ordre</label><input class="input" id="fOrder" type="number" value="${f.display_order??0}"></div></div>`,
+          `<button class="btn" id="fCancel">Annuler</button><button class="btn btn--gold" id="fSave">Enregistrer</button>`);
+        el('fCancel').onclick = m.close;
+        el('fSave').onclick = async () => {
+          const rec = { name_fr: el('fName').value.trim(), name_en: el('fNameEn').value.trim() || null, display_order: Number(el('fOrder').value||0) };
+          if (!f.id) rec.key = (el('fKey').value.trim() || slugify(el('fName').value));
+          if (!rec.name_fr) return toast('Nom requis', 'bad');
+          const res = f.id ? await db.from('filters').update(rec).eq('id', f.id) : await db.from('filters').insert(rec);
+          if (res.error) return toast(res.error.message, 'bad');
+          toast('Filtre enregistré'); m.close(); load();
+        };
+      }
+      function optionForm(filterId) {
+        const m = openModal('Nouvelle option', `
+          <div class="field"><label>Valeur (technique)</label><input class="input" id="oVal" placeholder="gold"></div>
+          <div class="field"><label>Libellé (FR)</label><input class="input" id="oFr" placeholder="Doré"></div>
+          <div class="field"><label>Libellé (EN)</label><input class="input" id="oEn" placeholder="Gold"></div>`,
+          `<button class="btn" id="oCancel">Annuler</button><button class="btn btn--gold" id="oSave">Ajouter</button>`);
+        el('oVal').addEventListener('blur', () => { if (!el('oVal').value.trim()) el('oVal').value = slugify(el('oFr').value); });
+        el('oCancel').onclick = m.close;
+        el('oSave').onclick = async () => {
+          const rec = { filter_id: filterId, value: (el('oVal').value.trim() || slugify(el('oFr').value)),
+            label_fr: el('oFr').value.trim() || null, label_en: el('oEn').value.trim() || null };
+          if (!rec.value) return toast('Valeur requise', 'bad');
+          const { error } = await db.from('filter_options').insert(rec);
+          if (error) return toast(error.message, 'bad');
+          toast('Option ajoutée'); m.close(); load();
+        };
+      }
+      el('add').onclick = () => filterForm();
+      load();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catégories — BELORYA Admin</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="lib.js"></script>
+  <script>
+    (async () => {
+      const user = await Admin.requireAdmin(); if (!user) return;
+      const db = Admin.db(); const { esc, el, slugify, toast, openModal } = Admin;
+
+      Admin.mountShell('categories.html', 'Catégories',
+        `<button class="btn btn--gold" id="add">+ Nouvelle catégorie</button>`,
+        `<div class="card"><div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>Image</th><th>Nom (FR)</th><th>Nom (EN)</th><th>Slug</th><th>Ordre</th><th class="right">Actions</th></tr></thead>
+          <tbody id="rows"><tr><td colspan="6"><div class="empty">Chargement…</div></td></tr></tbody>
+        </table></div></div>`);
+
+      async function load() {
+        const { data, error } = await db.from('categories').select('*').order('display_order');
+        if (error) { el('rows').innerHTML = `<tr><td colspan="6"><div class="empty">${esc(error.message)}</div></td></tr>`; return; }
+        el('rows').innerHTML = (data && data.length) ? data.map(c => `<tr>
+          <td><img class="thumb" src="${esc(c.image_url)||''}" onerror="this.style.visibility='hidden'"></td>
+          <td class="tbl__name">${esc(c.name_fr)}</td><td>${esc(c.name_en)||'<span class="muted">—</span>'}</td>
+          <td><code>${esc(c.slug)}</code></td><td>${c.display_order}</td>
+          <td class="right"><button class="btn btn--sm" data-edit='${esc(JSON.stringify(c))}'>Modifier</button>
+            <button class="btn btn--sm btn--danger" data-del="${c.id}" data-n="${esc(c.name_fr)}">✕</button></td></tr>`).join('')
+          : `<tr><td colspan="6"><div class="empty">Aucune catégorie.</div></td></tr>`;
+        el('rows').querySelectorAll('[data-edit]').forEach(b => b.onclick = () => form(JSON.parse(b.dataset.edit)));
+        el('rows').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+          if (!confirm(`Supprimer « ${b.dataset.n} » ? Les produits liés ne seront pas supprimés.`)) return;
+          const { error } = await db.from('categories').delete().eq('id', b.dataset.del);
+          toast(error ? error.message : 'Catégorie supprimée', error ? 'bad' : 'ok'); if (!error) load();
+        });
+      }
+
+      function form(c) {
+        c = c || {};
+        const m = openModal(c.id ? 'Modifier la catégorie' : 'Nouvelle catégorie', `
+          <div class="field"><label>Nom (FR)</label><input class="input" id="cName" value="${esc(c.name_fr)||''}"></div>
+          <div class="field"><label>Nom (EN)</label><input class="input" id="cNameEn" value="${esc(c.name_en)||''}"></div>
+          <div class="row">
+            <div class="field"><label>Slug</label><input class="input" id="cSlug" value="${esc(c.slug)||''}" placeholder="auto"></div>
+            <div class="field"><label>Ordre d'affichage</label><input class="input" id="cOrder" type="number" value="${c.display_order??0}"></div>
+          </div>
+          <div class="field"><label>Image de catégorie</label>
+            <div style="display:flex;gap:10px;align-items:center">
+              <img class="thumb" id="cImgPrev" src="${esc(c.image_url)||''}" style="width:54px;height:64px" onerror="this.style.visibility='hidden'">
+              <input type="file" id="cFile" accept="image/*"><input type="hidden" id="cImg" value="${esc(c.image_url)||''}">
+            </div></div>`,
+          `<button class="btn" id="cCancel">Annuler</button><button class="btn btn--gold" id="cSave">Enregistrer</button>`);
+        el('cName').addEventListener('blur', () => { if (!el('cSlug').value.trim()) el('cSlug').value = slugify(el('cName').value); });
+        el('cFile').onchange = async () => {
+          if (!el('cFile').files[0]) return;
+          try { const { url } = await Admin.upload(el('cFile').files[0], 'category'); el('cImg').value = url; el('cImgPrev').src = url; el('cImgPrev').style.visibility='visible'; toast('Image téléchargée'); }
+          catch (e) { toast(e.message || 'Échec upload', 'bad'); }
+        };
+        el('cCancel').onclick = m.close;
+        el('cSave').onclick = async () => {
+          const rec = { name_fr: el('cName').value.trim(), name_en: el('cNameEn').value.trim() || null,
+            slug: el('cSlug').value.trim() || slugify(el('cName').value), display_order: Number(el('cOrder').value||0),
+            image_url: el('cImg').value || null };
+          if (!rec.name_fr) return toast('Le nom est requis', 'bad');
+          const res = c.id ? await db.from('categories').update(rec).eq('id', c.id) : await db.from('categories').insert(rec);
+          if (res.error) return toast(res.error.message, 'bad');
+          toast('Catégorie enregistrée'); m.close(); load();
+        };
+      }
+      el('add').onclick = () => form();
+      load();
+    })();
+  </script>
+</body>
+</html>

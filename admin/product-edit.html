@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Produit — BELORYA Admin</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+  <style>
+    .pe-grid { display:grid; grid-template-columns: 1fr 320px; gap:18px; align-items:start; }
+    @media (max-width: 900px){ .pe-grid{ grid-template-columns:1fr; } }
+    .vrow { display:grid; grid-template-columns: 1.3fr 1fr .9fr .8fr .8fr auto; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line-2); }
+    .vrow input{ padding:7px 9px; }
+    .vrow--head { color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; border:none; padding-bottom:4px;}
+    .imgs { display:grid; grid-template-columns: repeat(auto-fill,minmax(110px,1fr)); gap:12px; }
+    .imgc { border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#fafbfc; }
+    .imgc img{ width:100%; aspect-ratio:3/4; object-fit:cover; display:block; }
+    .imgc.feat { outline:2px solid var(--gold); }
+    .imgc__bar { display:flex; align-items:center; justify-content:space-between; padding:5px 6px; gap:4px; }
+    .imgc__bar button{ font-size:.72rem; color:var(--muted); padding:2px 4px; border-radius:5px; }
+    .imgc__bar button:hover{ background:#eef0f3; color:var(--ink); }
+    .imgc__bar .star.on{ color:var(--gold); }
+    .drop { border:2px dashed var(--line); border-radius:10px; padding:22px; text-align:center; color:var(--muted); cursor:pointer; transition:border-color .2s, background .2s; }
+    .drop.drag{ border-color:var(--gold); background:#fbf7ec; }
+  </style>
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="lib.js"></script>
+  <script>
+    (async () => {
+      const user = await Admin.requireAdmin(); if (!user) return;
+      const db = Admin.db(); const { esc, el, slugify, toast } = Admin;
+      const id = new URLSearchParams(location.search).get('id');
+      const isNew = !id;
+
+      const { data: cats } = await db.from('categories').select('id,name_fr').order('display_order');
+      let P = { status:'active', price:0, stock:0, rating:4.8, is_featured:false, is_best_seller:false, is_new:false };
+      if (!isNew) {
+        const { data, error } = await db.from('products').select('*').eq('id', id).single();
+        if (error || !data) { alert('Produit introuvable'); location.href = 'products.html'; return; }
+        P = data;
+      }
+
+      const catOpts = (sel) => (cats||[]).map(c => `<option value="${c.id}" ${c.id===sel?'selected':''}>${esc(c.name_fr)}</option>`).join('');
+      const v = (x) => x == null ? '' : esc(x);
+
+      const content = Admin.mountShell('products.html', isNew ? 'Nouveau produit' : 'Modifier le produit',
+        `<a class="btn" href="products.html">← Retour</a><button class="btn btn--gold" id="save">Enregistrer</button>`,
+        `<div class="pe-grid">
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div class="card card--pad">
+              <h3 style="margin-bottom:14px">Détails</h3>
+              <div class="field"><label>Nom du produit</label><input class="input" id="name" value="${v(P.name)}"></div>
+              <div class="row">
+                <div class="field"><label>Slug (URL)</label><input class="input" id="slug" value="${v(P.slug)}" placeholder="auto"></div>
+                <div class="field"><label>Catégorie</label><select class="select" id="category_id"><option value="">—</option>${catOpts(P.category_id)}</select></div>
+              </div>
+              <div class="field"><label>Matière</label><input class="input" id="material" value="${v(P.material)}" placeholder="Acier inoxydable"></div>
+              <div class="field"><label>Description</label><textarea class="textarea" id="description">${v(P.description)}</textarea></div>
+              <div class="field"><label>Résumé court</label><input class="input" id="short" value="${v(P.short)}"></div>
+            </div>
+
+            <div class="card card--pad" id="variantsCard">
+              <h3 style="margin-bottom:6px">Variantes</h3>
+              <p class="muted" style="font-size:.8rem;margin-bottom:12px">Couleurs / finitions avec stock et prix propres.</p>
+              <div id="variants"></div>
+              <button class="btn btn--sm" id="addVar" style="margin-top:12px">+ Ajouter une variante</button>
+            </div>
+
+            <div class="card card--pad" id="imagesCard">
+              <h3 style="margin-bottom:12px">Images</h3>
+              <div class="drop" id="drop">Glissez-déposez des images ici, ou cliquez pour choisir</div>
+              <input type="file" id="file" accept="image/*" multiple hidden>
+              <div class="imgs" id="imgs" style="margin-top:14px"></div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div class="card card--pad">
+              <h3 style="margin-bottom:14px">Prix & promo</h3>
+              <div class="field"><label>Prix (MAD)</label><input class="input" id="price" type="number" step="1" value="${P.price ?? 0}"></div>
+              <div class="field"><label>Prix promo (MAD)</label><input class="input" id="sale_price" type="number" step="1" value="${P.sale_price ?? ''}" placeholder="—"></div>
+              <div class="row">
+                <div class="field"><label>Début promo</label><input class="input" id="sale_start" type="date" value="${P.sale_start ? P.sale_start.slice(0,10) : ''}"></div>
+                <div class="field"><label>Fin promo</label><input class="input" id="sale_end" type="date" value="${P.sale_end ? P.sale_end.slice(0,10) : ''}"></div>
+              </div>
+            </div>
+            <div class="card card--pad">
+              <h3 style="margin-bottom:14px">Stock & statut</h3>
+              <div class="row">
+                <div class="field"><label>Stock</label><input class="input" id="stock" type="number" step="1" value="${P.stock ?? 0}"></div>
+                <div class="field"><label>SKU</label><input class="input" id="sku" value="${v(P.sku)}"></div>
+              </div>
+              <div class="field"><label>Statut</label><select class="select" id="status">
+                <option value="active" ${P.status==='active'?'selected':''}>Actif</option>
+                <option value="draft" ${P.status==='draft'?'selected':''}>Brouillon</option>
+                <option value="out_of_stock" ${P.status==='out_of_stock'?'selected':''}>Rupture</option>
+                <option value="archived" ${P.status==='archived'?'selected':''}>Archivé</option></select></div>
+              <div class="field"><label>Badge</label><input class="input" id="badge" value="${v(P.badge)}" placeholder="Best Seller / New / Limited"></div>
+            </div>
+            <div class="card card--pad">
+              <h3 style="margin-bottom:12px">Mise en avant</h3>
+              <div class="field"><label class="check"><input type="checkbox" id="is_featured" ${P.is_featured?'checked':''}> En vedette</label></div>
+              <div class="field"><label class="check"><input type="checkbox" id="is_best_seller" ${P.is_best_seller?'checked':''}> Meilleure vente</label></div>
+              <div class="field" style="margin-bottom:0"><label class="check"><input type="checkbox" id="is_new" ${P.is_new?'checked':''}> Nouveauté</label></div>
+            </div>
+          </div>
+        </div>`);
+
+      // auto-slug from name when slug empty
+      el('name').addEventListener('blur', () => { if (!el('slug').value.trim()) el('slug').value = slugify(el('name').value); });
+
+      // ---------- SAVE details ----------
+      el('save').onclick = async () => {
+        const btn = el('save'); btn.disabled = true; btn.textContent = 'Enregistrement…';
+        const rec = {
+          name: el('name').value.trim(),
+          slug: (el('slug').value.trim() || slugify(el('name').value)),
+          category_id: el('category_id').value || null,
+          price: Number(el('price').value || 0),
+          sale_price: el('sale_price').value === '' ? null : Number(el('sale_price').value),
+          sale_start: el('sale_start').value ? new Date(el('sale_start').value).toISOString() : null,
+          sale_end: el('sale_end').value ? new Date(el('sale_end').value).toISOString() : null,
+          material: el('material').value.trim() || null,
+          sku: el('sku').value.trim() || null,
+          stock: Number(el('stock').value || 0),
+          description: el('description').value.trim() || null,
+          short: el('short').value.trim() || null,
+          status: el('status').value,
+          badge: el('badge').value.trim() || null,
+          is_featured: el('is_featured').checked,
+          is_best_seller: el('is_best_seller').checked,
+          is_new: el('is_new').checked
+        };
+        if (!rec.name) { toast('Le nom est requis', 'bad'); btn.disabled=false; btn.textContent='Enregistrer'; return; }
+        let res;
+        if (isNew) res = await db.from('products').insert(rec).select('id').single();
+        else res = await db.from('products').update(rec).eq('id', id).select('id').single();
+        btn.disabled = false; btn.textContent = 'Enregistrer';
+        if (res.error) { toast(res.error.message, 'bad'); return; }
+        toast('Produit enregistré');
+        if (isNew) location.href = 'product-edit.html?id=' + res.data.id;
+      };
+
+      // sections that need an existing product id
+      if (isNew) {
+        el('variantsCard').innerHTML = '<h3>Variantes</h3><p class="muted" style="margin-top:8px">Enregistrez d’abord le produit pour gérer les variantes.</p>';
+        el('imagesCard').innerHTML = '<h3>Images</h3><p class="muted" style="margin-top:8px">Enregistrez d’abord le produit pour ajouter des images.</p>';
+        return;
+      }
+
+      // ---------- VARIANTS ----------
+      async function loadVariants() {
+        const { data } = await db.from('product_variants').select('*').eq('product_id', id).order('display_order');
+        const head = `<div class="vrow vrow--head"><span>Nom</span><span>Couleur</span><span>SKU</span><span>Stock</span><span>+/- Prix</span><span></span></div>`;
+        el('variants').innerHTML = head + (data||[]).map(vr => `
+          <div class="vrow" data-v="${vr.id}">
+            <input class="input" data-f="name" value="${esc(vr.name)}">
+            <input class="input" data-f="color" value="${esc(vr.color)||''}">
+            <input class="input" data-f="sku" value="${esc(vr.sku)||''}">
+            <input class="input" data-f="stock" type="number" value="${vr.stock}">
+            <input class="input" data-f="price_diff" type="number" value="${vr.price_diff}">
+            <button class="btn btn--sm btn--danger" data-delv="${vr.id}">✕</button>
+          </div>`).join('') || (head + '<p class="muted" style="padding:8px 0">Aucune variante.</p>');
+        el('variants').querySelectorAll('.vrow[data-v]').forEach(row => {
+          const vid = row.dataset.v;
+          row.querySelectorAll('[data-f]').forEach(inp => inp.addEventListener('change', async () => {
+            const f = inp.dataset.f;
+            const val = (f === 'stock' || f === 'price_diff') ? Number(inp.value || 0) : (inp.value.trim() || null);
+            const { error } = await db.from('product_variants').update({ [f]: val }).eq('id', vid);
+            toast(error ? error.message : 'Variante mise à jour', error ? 'bad' : 'ok');
+          }));
+        });
+        el('variants').querySelectorAll('[data-delv]').forEach(b => b.onclick = async () => {
+          if (!confirm('Supprimer cette variante ?')) return;
+          await db.from('product_variants').delete().eq('id', b.dataset.delv); loadVariants();
+        });
+      }
+      el('addVar').onclick = async () => {
+        const { error } = await db.from('product_variants').insert({ product_id: id, name: 'Nouvelle variante', stock: 0 });
+        if (error) return toast(error.message, 'bad');
+        loadVariants();
+      };
+      loadVariants();
+
+      // ---------- IMAGES ----------
+      async function loadImages() {
+        const { data } = await db.from('product_images').select('*').eq('product_id', id).order('display_order');
+        const imgs = data || [];
+        el('imgs').innerHTML = imgs.map((im, i) => `
+          <div class="imgc ${im.is_featured ? 'feat' : ''}" data-i="${im.id}">
+            <img src="${esc(im.url)}" alt="">
+            <div class="imgc__bar">
+              <button class="star ${im.is_featured?'on':''}" data-feat="${im.id}" data-url="${esc(im.url)}" title="Image principale">★</button>
+              <span>
+                <button data-up="${im.id}" ${i===0?'disabled':''} title="Monter">▲</button>
+                <button data-down="${im.id}" ${i===imgs.length-1?'disabled':''} title="Descendre">▼</button>
+                <button data-delimg="${im.id}" data-path="" title="Supprimer">✕</button>
+              </span>
+            </div>
+          </div>`).join('') || '<p class="muted">Aucune image.</p>';
+
+        el('imgs').querySelectorAll('[data-feat]').forEach(b => b.onclick = async () => {
+          await db.from('product_images').update({ is_featured: false }).eq('product_id', id);
+          await db.from('product_images').update({ is_featured: true }).eq('id', b.dataset.feat);
+          await db.from('products').update({ featured_image: b.dataset.url }).eq('id', id);
+          toast('Image principale définie'); loadImages();
+        });
+        const swap = async (aId, dir) => {
+          const arr = imgs; const idx = arr.findIndex(x => x.id === aId); const j = idx + dir;
+          if (j < 0 || j >= arr.length) return;
+          const a = arr[idx], b = arr[j];
+          await db.from('product_images').update({ display_order: b.display_order }).eq('id', a.id);
+          await db.from('product_images').update({ display_order: a.display_order }).eq('id', b.id);
+          loadImages();
+        };
+        el('imgs').querySelectorAll('[data-up]').forEach(b => b.onclick = () => swap(b.dataset.up, -1));
+        el('imgs').querySelectorAll('[data-down]').forEach(b => b.onclick = () => swap(b.dataset.down, 1));
+        el('imgs').querySelectorAll('[data-delimg]').forEach(b => b.onclick = async () => {
+          if (!confirm('Supprimer cette image ?')) return;
+          await db.from('product_images').delete().eq('id', b.dataset.delimg); loadImages();
+        });
+      }
+      async function addFiles(files) {
+        const list = [...files].filter(f => f.type.startsWith('image/'));
+        if (!list.length) return;
+        const { data: existing } = await db.from('product_images').select('display_order').eq('product_id', id).order('display_order', { ascending: false }).limit(1);
+        let ord = existing && existing.length ? (existing[0].display_order + 1) : 0;
+        const firstEver = !(existing && existing.length);
+        for (const f of list) {
+          try {
+            const { url } = await Admin.upload(f, 'product');
+            const feat = firstEver && ord === 0;
+            await db.from('product_images').insert({ product_id: id, url, display_order: ord++, is_featured: feat });
+            if (feat) await db.from('products').update({ featured_image: url }).eq('id', id);
+          } catch (e) { toast('Échec upload: ' + (e.message || e), 'bad'); }
+        }
+        toast('Images ajoutées'); loadImages();
+      }
+      const drop = el('drop'), file = el('file');
+      drop.onclick = () => file.click();
+      file.onchange = () => { addFiles(file.files); file.value = ''; };
+      ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
+      ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
+      drop.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+      loadImages();
+    })();
+  </script>
+</body>
+</html>

@@ -56,9 +56,10 @@ orders; only signed-in **admins** can manage data.
    };
    ```
 
-   > The same values are read by the storefront (via `js/store-data.js`) so the site pulls
-   > products/settings from the database. Until this is filled in, the storefront keeps using
-   > its built-in data and the admin shows a "Configuration requise" screen — nothing breaks.
+   > The storefront loads this same `admin/config.js` and reads it via `js/store.js`, so the
+   > site pulls products/categories/promo/settings from the database. Until this is filled in,
+   > the storefront keeps using its built-in data and the admin shows a "Configuration requise"
+   > screen — nothing breaks.
 
 3. Commit & push. Done.
 

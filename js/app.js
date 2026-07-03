@@ -5,23 +5,27 @@
    · scroll reveal · product rendering · collection filters · PDP
    ============================================================ */
 
-const WHATSAPP_NUMBER = '212660323891'; // Belorya WhatsApp (international, no +)
-const BRAND = 'Belorya';
-const TAGLINE = 'Eternal Shine';
-const LOGO_SRC = 'assets/logo.png';
-const EMAIL = 'belorya1@gmail.com';
-const SOCIALS = {
+/* Defaults — overridden at boot by settings from Supabase when configured (js/store.js). */
+let WHATSAPP_NUMBER = '212660323891'; // Belorya WhatsApp (international, no +)
+let BRAND = 'Belorya';
+let TAGLINE = 'Eternal Shine';
+let LOGO_SRC = 'assets/logo.png';
+let EMAIL = 'belorya1@gmail.com';
+let SOCIALS = {
   instagram: 'https://www.instagram.com/belorya_/',
   facebook: 'https://www.facebook.com/profile.php?id=61591102114678',
   tiktok: 'https://www.tiktok.com/@belorya5',
   whatsapp: `https://wa.me/${WHATSAPP_NUMBER}`
 };
 
-/* Promo + shipping rules */
-const PROMO_CODE = 'BELORYA10';
-const PROMO_RATE = 0.10;               // 10%
-const SHIP_FEE = 35;                   // MAD, outside Casablanca under threshold
-const SHIP_FREE_THRESHOLD = 250;       // MAD
+/* Promo + shipping rules (defaults; overridden by settings) */
+let PROMO_CODE = 'BELORYA10';
+let PROMO_TYPE = 'percent';           // 'percent' | 'fixed'
+let PROMO_VALUE = 10;                 // 10(%) or a fixed MAD amount
+let PROMO_MIN = 0;                    // minimum order for the promo
+let SHIP_FEE = 35;                   // MAD, outside Casablanca under threshold
+let SHIP_FREE_THRESHOLD = 250;       // MAD
+let SHIP_CASA_FREE = true;
 
 /* Brand lockup */
 function brandLockup(extraClass = '') {
@@ -291,10 +295,13 @@ function updateCartCount() {
 function computeTotals() {
   const subtotal = cartSubtotal();
   const promo = getPromo();
-  const discount = promo ? Math.round(subtotal * PROMO_RATE) : 0;
+  let discount = 0;
+  if (promo && subtotal >= PROMO_MIN) {
+    discount = PROMO_TYPE === 'fixed' ? Math.min(PROMO_VALUE, subtotal) : Math.round(subtotal * (PROMO_VALUE / 100));
+  }
   const zone = getZone();
-  let shipping = 0;
-  if (zone === 'outside') shipping = subtotal >= SHIP_FREE_THRESHOLD ? 0 : SHIP_FEE;
+  const fee = subtotal >= SHIP_FREE_THRESHOLD ? 0 : SHIP_FEE;
+  const shipping = (zone === 'casablanca' && SHIP_CASA_FREE) ? 0 : fee;
   const total = Math.max(0, subtotal - discount + shipping);
   return { subtotal, promo, discount, zone, shipping, total };
 }
@@ -464,6 +471,15 @@ function waOrderCart() {
   msg += `${t('wa_shipping_fee')} : ${T.shipping === 0 ? t('wa_free') : formatPrice(T.shipping)}${NL}`;
   msg += `${t('wa_total')} : ${formatPrice(T.total)}${NL}${NL}`;
   msg += `${t('wa_name')} :${NL}${t('wa_phone')} :${NL}${t('wa_address')} :${NL}${NL}${t('wa_thanks')}`;
+
+  // Persist the order so it appears in the admin (silent no-op if offline)
+  if (window.Store && Store.saveOrder) {
+    const order = { subtotal: T.subtotal, discount: T.discount, shipping: T.shipping, total: T.total,
+      promo_code: T.promo ? PROMO_CODE : null, shipping_zone: T.zone, status: 'pending' };
+    const items = cart.map(i => { const p = PRODUCTS.find(x => x.id === i.id); return { product_name: p ? p.name : i.id, qty: i.qty, unit_price: p ? p.price : 0 }; });
+    Store.saveOrder(order, items);
+  }
+
   window.open(`${SOCIALS.whatsapp}?text=${msg}`, '_blank');
 }
 
@@ -492,6 +508,7 @@ function initReveal() {
 function badgeClass(b) { return b === 'New' ? 'new' : b === 'Limited' ? 'limited' : ''; }
 function discountPct(p) { return p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0; }
 function isOnSale(p) { return !!p.oldPrice && p.oldPrice > p.price; }
+function isSoldOut(p) { return (p.stock != null && p.stock <= 0) || p.status === 'out_of_stock'; }
 
 function productCard(p, delay = 0) {
   const badge = p.badge ? `<span class="product-badge ${badgeClass(p.badge)}">${p.badge}</span>` : '';
@@ -501,9 +518,11 @@ function productCard(p, delay = 0) {
   return `<article class="product-card" data-reveal data-delay="${delay}">
     <div class="product-card__media">
       <a href="product.html?id=${p.id}" aria-label="${p.name}">${productMedia(p)}</a>
-      ${badge}${sale}
+      ${badge}${sale}${isSoldOut(p) ? `<span class="sale-badge" style="background:#3a3a3a">${t('sold_out')}</span>` : ''}
       <div class="product-quick">
-        <button class="btn btn--gold btn--block btn--sm" onclick="addToCart('${p.id}')">${t('card_add', { price: formatPrice(p.price) })}</button>
+        ${isSoldOut(p)
+          ? `<button class="btn btn--block btn--sm" disabled>${t('sold_out')}</button>`
+          : `<button class="btn btn--gold btn--block btn--sm" onclick="addToCart('${p.id}')">${t('card_add', { price: formatPrice(p.price) })}</button>`}
       </div>
     </div>
     <div class="product-card__body">
@@ -598,6 +617,7 @@ function renderProductPage() {
 
   const stars = '★★★★★';
   const onSale = isOnSale(p);
+  const soldOut = isSoldOut(p);
   const old = onSale ? `<s>${formatPrice(p.oldPrice)}</s>` : '';
   const save = onSale ? `<em>${t('pdp_save', { amount: formatPrice(p.oldPrice - p.price) })}</em>` : '';
   const salePct = onSale ? `<span class="sale-badge pdp__sale">-${discountPct(p)}%</span>` : '';
@@ -642,7 +662,7 @@ function renderProductPage() {
                 <span id="qtyVal">1</span>
                 <button id="qtyPlus" aria-label="${t('pdp_inc')}">+</button>
               </div>
-              <button class="btn pdp__add" id="pdpAdd">${t('pdp_add')}</button>
+              <button class="btn pdp__add" id="pdpAdd" ${soldOut ? 'disabled' : ''}>${soldOut ? t('sold_out') : t('pdp_add')}</button>
             </div>
             <button class="btn btn--gold pdp__wa" id="pdpWa">${ICONS.wa} ${t('pdp_wa')}</button>
           </div>
@@ -751,8 +771,58 @@ function initNewsletter() {
   });
 }
 
+/* ---------------- Apply dynamic settings from Supabase ---------------- */
+function applySettings(S, promo) {
+  if (!S) return;
+  const b = S.brand || {}, soc = S.socials || {}, shp = S.shipping || {}, seo = S.seo || {}, hp = S.homepage || {};
+  if (b.name) BRAND = b.name;
+  if (b.tagline) TAGLINE = b.tagline;
+  if (b.logo_url) LOGO_SRC = b.logo_url;
+  const wa = (soc.whatsapp || '').replace(/[^0-9]/g, '');
+  if (wa) WHATSAPP_NUMBER = wa;
+  if (soc.email) EMAIL = soc.email;
+  SOCIALS = {
+    instagram: soc.instagram || SOCIALS.instagram, facebook: soc.facebook || SOCIALS.facebook,
+    tiktok: soc.tiktok || SOCIALS.tiktok, whatsapp: `https://wa.me/${WHATSAPP_NUMBER}`
+  };
+  if (typeof shp.outside_fee === 'number') SHIP_FEE = shp.outside_fee;
+  if (typeof shp.free_threshold === 'number') SHIP_FREE_THRESHOLD = shp.free_threshold;
+  if (typeof shp.casablanca_free === 'boolean') SHIP_CASA_FREE = shp.casablanca_free;
+  if (shp.eta && typeof UI !== 'undefined') { UI.fr.cart_eta_val = shp.eta; }
+  if (promo) { PROMO_CODE = String(promo.code).toUpperCase(); PROMO_TYPE = promo.discount_type; PROMO_VALUE = Number(promo.discount_value); PROMO_MIN = Number(promo.min_order || 0); }
+
+  // Homepage/i18n text overrides (FR)
+  if (typeof UI !== 'undefined') {
+    const f = UI.fr;
+    const set = (k, v) => { if (v) f[k] = v; };
+    set('hero_title', hp.hero_title_fr); set('hero_sub', hp.hero_sub_fr);
+    set('hero_cta1', hp.hero_cta1_fr); set('hero_cta2', hp.hero_cta2_fr);
+    if (hp.trust_casa) { f.trust_free_casa = hp.trust_casa; f.ship_casa_free = hp.trust_casa; }
+    if (hp.trust_250) { f.trust_free_250 = hp.trust_250; f.ship_maroc_250 = hp.trust_250; }
+    set('trust_cod', hp.trust_cod); set('trust_steel', hp.trust_steel);
+    set('about_title', hp.story_title_fr); set('about_p', hp.story_text_fr);
+    set('nl_title', hp.newsletter_title_fr); set('nl_sub', hp.newsletter_sub_fr);
+    set('footer_desc', hp.footer_desc_fr);
+  }
+  // SEO
+  if (seo.title) document.title = seo.title;
+  if (seo.description) { const m = document.querySelector('meta[name="description"]'); if (m) m.setAttribute('content', seo.description); }
+  // Homepage images/label
+  if (document.body.dataset.page === 'home') {
+    if (hp.hero_image) { const im = document.querySelector('.hero__frame img'); if (im) im.src = hp.hero_image; }
+    if (hp.hero_label) { const l = document.querySelector('.hero__badge p'); if (l) l.textContent = hp.hero_label; }
+    if (hp.story_image) { const im = document.querySelector('.editorial__media img'); if (im) im.src = hp.story_image; }
+  }
+}
+
 /* ---------------- Boot ---------------- */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    if (window.Store && Store.hydrate) {
+      const r = await Store.hydrate();
+      if (r && r.ok) applySettings(Store.settings, Store.promo);
+    }
+  } catch (e) { /* graceful fallback to built-in data */ }
   applyStaticI18n();
   renderHeader();
   renderTrustBar();

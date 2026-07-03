@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Réglages — BELORYA Admin</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="lib.js"></script>
+  <script>
+    (async () => {
+      const user = await Admin.requireAdmin(); if (!user) return;
+      const db = Admin.db(); const { esc, el, toast } = Admin;
+
+      const { data: rows } = await db.from('settings').select('*');
+      const S = {}; (rows || []).forEach(r => S[r.key] = r.value || {});
+      const g = (k) => S[k] || {};
+      const soc = g('socials'), shp = g('shipping'), seo = g('seo'), brand = g('brand');
+      const v = (x) => x == null ? '' : esc(x);
+
+      Admin.mountShell('settings.html', 'Réglages', '', `
+        <div class="grid" style="grid-template-columns:1fr 1fr;gap:18px" id="wrap">
+          <div class="card card--pad">
+            <h3 style="margin-bottom:14px">Réseaux sociaux & contact</h3>
+            <div class="field"><label>Instagram</label><input class="input" id="s_ig" value="${v(soc.instagram)}"></div>
+            <div class="field"><label>Facebook</label><input class="input" id="s_fb" value="${v(soc.facebook)}"></div>
+            <div class="field"><label>TikTok</label><input class="input" id="s_tk" value="${v(soc.tiktok)}"></div>
+            <div class="field"><label>WhatsApp (indicatif + numéro, sans +)</label><input class="input" id="s_wa" value="${v(soc.whatsapp)}" placeholder="212660323891"></div>
+            <div class="field" style="margin-bottom:0"><label>E-mail</label><input class="input" id="s_em" value="${v(soc.email)}"></div>
+            <button class="btn btn--gold" id="saveSoc" style="margin-top:16px">Enregistrer</button>
+          </div>
+
+          <div class="card card--pad">
+            <h3 style="margin-bottom:14px">Livraison</h3>
+            <div class="field"><label class="check"><input type="checkbox" id="sh_casa" ${shp.casablanca_free!==false?'checked':''}> Livraison gratuite à Casablanca</label></div>
+            <div class="row">
+              <div class="field"><label>Frais hors Casablanca (MAD)</label><input class="input" id="sh_fee" type="number" value="${shp.outside_fee??35}"></div>
+              <div class="field"><label>Seuil livraison offerte (MAD)</label><input class="input" id="sh_thr" type="number" value="${shp.free_threshold??250}"></div>
+            </div>
+            <div class="field" style="margin-bottom:0"><label>Délai estimé</label><input class="input" id="sh_eta" value="${v(shp.eta)||'2–4 jours ouvrables'}"></div>
+            <button class="btn btn--gold" id="saveShp" style="margin-top:16px">Enregistrer</button>
+          </div>
+
+          <div class="card card--pad" style="grid-column:1/-1">
+            <h3 style="margin-bottom:14px">Site & SEO</h3>
+            <div class="row">
+              <div class="field"><label>Nom de la marque</label><input class="input" id="b_name" value="${v(brand.name)||'Belorya'}"></div>
+              <div class="field"><label>Slogan</label><input class="input" id="b_tag" value="${v(brand.tagline)||'Eternal Shine'}"></div>
+            </div>
+            <div class="row">
+              <div class="field"><label>Logo</label>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <img class="thumb" id="logoPrev" src="${v(brand.logo_url)||'../assets/logo.png'}" style="width:48px;height:48px;object-fit:contain;background:#15141a">
+                  <input type="file" id="logoFile" accept="image/*"><input type="hidden" id="b_logo" value="${v(brand.logo_url)}"></div></div>
+              <div class="field"><label>Favicon</label>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <img class="thumb" id="favPrev" src="${v(brand.favicon_url)}" style="width:32px;height:32px" onerror="this.style.visibility='hidden'">
+                  <input type="file" id="favFile" accept="image/*"><input type="hidden" id="b_fav" value="${v(brand.favicon_url)}"></div></div>
+            </div>
+            <div class="field"><label>Langue par défaut</label><select class="select" id="b_lang" style="max-width:220px">
+              <option value="fr" ${(brand.default_lang||'fr')==='fr'?'selected':''}>Français</option>
+              <option value="en" ${brand.default_lang==='en'?'selected':''}>English</option></select></div>
+            <div class="field"><label>Titre SEO</label><input class="input" id="se_title" value="${v(seo.title)}"></div>
+            <div class="field"><label>Description SEO</label><textarea class="textarea" id="se_desc">${v(seo.description)}</textarea></div>
+            <div class="row">
+              <div class="field"><label>Google Analytics (ID)</label><input class="input" id="se_ga" value="${v(seo.ga)}" placeholder="G-XXXXXXX"></div>
+              <div class="field"><label>Meta Pixel (ID)</label><input class="input" id="se_px" value="${v(seo.meta_pixel)}" placeholder="1234567890"></div>
+            </div>
+            <button class="btn btn--gold" id="saveSite" style="margin-top:6px">Enregistrer</button>
+          </div>
+        </div>`);
+
+      async function save(key, value, btn) {
+        const b = el(btn); b.disabled = true; b.textContent = 'Enregistrement…';
+        const { error } = await db.from('settings').upsert({ key, value });
+        b.disabled = false; b.textContent = 'Enregistrer';
+        toast(error ? error.message : 'Réglages enregistrés', error ? 'bad' : 'ok');
+      }
+      const upl = async (fileEl, hidden, prev, kind) => {
+        if (!el(fileEl).files[0]) return;
+        try { const { url } = await Admin.upload(el(fileEl).files[0], kind); el(hidden).value = url; el(prev).src = url; el(prev).style.visibility='visible'; toast('Image téléchargée'); }
+        catch (e) { toast(e.message || 'Échec', 'bad'); }
+      };
+      el('logoFile').onchange = () => upl('logoFile', 'b_logo', 'logoPrev', 'logo');
+      el('favFile').onchange = () => upl('favFile', 'b_fav', 'favPrev', 'logo');
+
+      el('saveSoc').onclick = () => save('socials', {
+        instagram: el('s_ig').value.trim(), facebook: el('s_fb').value.trim(), tiktok: el('s_tk').value.trim(),
+        whatsapp: el('s_wa').value.trim().replace(/[^0-9]/g, ''), email: el('s_em').value.trim()
+      }, 'saveSoc');
+      el('saveShp').onclick = () => save('shipping', {
+        casablanca_free: el('sh_casa').checked, outside_fee: Number(el('sh_fee').value || 0),
+        free_threshold: Number(el('sh_thr').value || 0), eta: el('sh_eta').value.trim()
+      }, 'saveShp');
+      el('saveSite').onclick = async () => {
+        await db.from('settings').upsert({ key: 'brand', value: {
+          name: el('b_name').value.trim(), tagline: el('b_tag').value.trim(),
+          logo_url: el('b_logo').value || null, favicon_url: el('b_fav').value || null, default_lang: el('b_lang').value
+        }});
+        await db.from('settings').upsert({ key: 'seo', value: {
+          title: el('se_title').value.trim(), description: el('se_desc').value.trim(),
+          ga: el('se_ga').value.trim(), meta_pixel: el('se_px').value.trim()
+        }});
+        toast('Réglages enregistrés');
+      };
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Page d’accueil — BELORYA Admin</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="lib.js"></script>
+  <script>
+    (async () => {
+      const user = await Admin.requireAdmin(); if (!user) return;
+      const db = Admin.db(); const { esc, el, toast } = Admin;
+      const { data: row } = await db.from('settings').select('value').eq('key', 'homepage').single();
+      const H = (row && row.value) || {};
+      const v = (x) => x == null ? '' : esc(x);
+
+      Admin.mountShell('homepage.html', 'Page d’accueil',
+        `<button class="btn btn--gold" id="save">Enregistrer</button>`, `
+        <p class="muted" style="margin-bottom:16px">Ces contenus alimentent la page d’accueil du site (langue FR). Le storefront les lit automatiquement.</p>
+        <div class="grid" style="grid-template-columns:1fr 1fr;gap:18px">
+          <div class="card card--pad">
+            <h3 style="margin-bottom:14px">Section Hero</h3>
+            <div class="field"><label>Titre principal (HTML autorisé : &lt;br&gt;, &lt;em&gt;)</label><input class="input" id="h_title" value="${v(H.hero_title_fr)}"></div>
+            <div class="field"><label>Sous-titre</label><textarea class="textarea" id="h_sub">${v(H.hero_sub_fr)}</textarea></div>
+            <div class="row">
+              <div class="field"><label>Bouton 1</label><input class="input" id="h_cta1" value="${v(H.hero_cta1_fr)}" placeholder="Découvrir la collection"></div>
+              <div class="field"><label>Bouton 2</label><input class="input" id="h_cta2" value="${v(H.hero_cta2_fr)}" placeholder="Meilleures ventes"></div>
+            </div>
+            <div class="field"><label>Étiquette produit vedette</label><input class="input" id="h_label" value="${v(H.hero_label)}" placeholder="Reflet Lunaire"></div>
+            <div class="field" style="margin-bottom:0"><label>Image du hero</label>
+              <div style="display:flex;gap:10px;align-items:center">
+                <img class="thumb" id="heroPrev" src="${v(H.hero_image)}" onerror="this.style.visibility='hidden'">
+                <input type="file" id="heroFile" accept="image/*"><input type="hidden" id="h_image" value="${v(H.hero_image)}"></div></div>
+          </div>
+
+          <div class="card card--pad">
+            <h3 style="margin-bottom:14px">Barre de confiance</h3>
+            <div class="field"><label>Livraison gratuite (Casablanca)</label><input class="input" id="t_casa" value="${v(H.trust_casa)||'Livraison gratuite à Casablanca'}"></div>
+            <div class="field"><label>Livraison offerte (seuil)</label><input class="input" id="t_250" value="${v(H.trust_250)||'Livraison offerte dès 250 MAD'}"></div>
+            <div class="field"><label>Paiement</label><input class="input" id="t_cod" value="${v(H.trust_cod)||'Paiement à la livraison'}"></div>
+            <div class="field" style="margin-bottom:0"><label>Matière</label><input class="input" id="t_steel" value="${v(H.trust_steel)||'Acier inoxydable'}"></div>
+          </div>
+
+          <div class="card card--pad">
+            <h3 style="margin-bottom:14px">Notre histoire</h3>
+            <div class="field"><label>Titre</label><input class="input" id="st_title" value="${v(H.story_title_fr)}" placeholder="Pensés pour l'élégance du quotidien"></div>
+            <div class="field"><label>Texte</label><textarea class="textarea" id="st_text">${v(H.story_text_fr)}</textarea></div>
+            <div class="field" style="margin-bottom:0"><label>Image</label>
+              <div style="display:flex;gap:10px;align-items:center">
+                <img class="thumb" id="storyPrev" src="${v(H.story_image)}" onerror="this.style.visibility='hidden'">
+                <input type="file" id="storyFile" accept="image/*"><input type="hidden" id="st_image" value="${v(H.story_image)}"></div></div>
+          </div>
+
+          <div class="card card--pad">
+            <h3 style="margin-bottom:14px">Newsletter & pied de page</h3>
+            <div class="field"><label>Titre newsletter (HTML autorisé)</label><input class="input" id="nl_title" value="${v(H.newsletter_title_fr)}" placeholder="Rejoignez la <em>liste privée</em>"></div>
+            <div class="field"><label>Sous-titre newsletter</label><textarea class="textarea" id="nl_sub">${v(H.newsletter_sub_fr)}</textarea></div>
+            <div class="field" style="margin-bottom:0"><label>Texte du pied de page</label><textarea class="textarea" id="ft_desc">${v(H.footer_desc_fr)}</textarea></div>
+          </div>
+        </div>`);
+
+      const upl = async (fileEl, hidden, prev) => {
+        if (!el(fileEl).files[0]) return;
+        try { const { url } = await Admin.upload(el(fileEl).files[0], 'homepage'); el(hidden).value = url; el(prev).src = url; el(prev).style.visibility='visible'; toast('Image téléchargée'); }
+        catch (e) { toast(e.message || 'Échec', 'bad'); }
+      };
+      el('heroFile').onchange = () => upl('heroFile', 'h_image', 'heroPrev');
+      el('storyFile').onchange = () => upl('storyFile', 'st_image', 'storyPrev');
+
+      el('save').onclick = async () => {
+        const value = {
+          hero_title_fr: el('h_title').value, hero_sub_fr: el('h_sub').value,
+          hero_cta1_fr: el('h_cta1').value.trim(), hero_cta2_fr: el('h_cta2').value.trim(),
+          hero_label: el('h_label').value.trim(), hero_image: el('h_image').value || null,
+          trust_casa: el('t_casa').value.trim(), trust_250: el('t_250').value.trim(),
+          trust_cod: el('t_cod').value.trim(), trust_steel: el('t_steel').value.trim(),
+          story_title_fr: el('st_title').value, story_text_fr: el('st_text').value, story_image: el('st_image').value || null,
+          newsletter_title_fr: el('nl_title').value, newsletter_sub_fr: el('nl_sub').value, footer_desc_fr: el('ft_desc').value
+        };
+        const { error } = await db.from('settings').upsert({ key: 'homepage', value });
+        toast(error ? error.message : 'Page d’accueil enregistrée', error ? 'bad' : 'ok');
+      };
+    })();
+  </script>
+</body>
+</html>

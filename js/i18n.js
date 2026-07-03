@@ -82,7 +82,7 @@ const UI = {
     cart_remove: 'Retirer', cart_added: '{name} ajouté à votre panier',
     cart_checkout_demo: 'Commande via WhatsApp — cliquez sur « Commander sur WhatsApp ».',
     /* product card */
-    card_add: 'Ajouter — {price}', card_view: 'Voir le produit',
+    card_add: 'Ajouter — {price}', card_view: 'Voir le produit', sold_out: 'Épuisé',
     /* pdp */
     pdp_home: 'Accueil', pdp_reviews: 'Lire les avis',
     pdp_add: 'Ajouter au panier', pdp_wa: 'Commander sur WhatsApp',
@@ -182,7 +182,7 @@ const UI = {
     cart_eta_label: 'Estimated delivery', cart_eta_val: '2–4 business days',
     cart_remove: 'Remove', cart_added: '{name} added to your bag',
     cart_checkout_demo: 'Ordering is via WhatsApp — tap “Order on WhatsApp”.',
-    card_add: 'Add — {price}', card_view: 'View product',
+    card_add: 'Add — {price}', card_view: 'View product', sold_out: 'Sold out',
     pdp_home: 'Home', pdp_reviews: 'Read reviews',
     pdp_add: 'Add to bag', pdp_wa: 'Order on WhatsApp',
     pdp_save: 'Save {amount}',

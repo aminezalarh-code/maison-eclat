@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    BELORYA Admin — shared library
    Supabase client · auth · route guard · app shell · helpers
    Loaded on every admin page after config.js and the supabase-js CDN.
@@ -139,8 +139,43 @@
     return n || 0;
   }
 
+  function slugify(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  /* Upload an image File to the public "media" bucket, log it in media table, return its URL. */
+  async function upload(file, kind) {
+    const c = db(); if (!c) throw new Error('not-configured');
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await c.storage.from('media').upload(path, file, { cacheControl: '3600', upsert: false });
+    if (error) throw error;
+    const { data } = c.storage.from('media').getPublicUrl(path);
+    const url = data.publicUrl;
+    await c.from('media').insert({ url, path, kind: kind || 'product', alt: file.name });
+    return { url, path };
+  }
+
+  /* Generic modal. Returns { root, close }. footHTML buttons wire themselves via ids you pass. */
+  function openModal(title, bodyHTML, footHTML) {
+    let ov = el('amodal');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'amodal'; ov.className = 'modal-ov'; document.body.appendChild(ov); }
+    ov.innerHTML = `<div class="modal">
+      <div class="modal__head"><h2>${title}</h2><button class="modal__close" id="amodalClose" aria-label="Fermer">×</button></div>
+      <div class="modal__body">${bodyHTML}</div>
+      ${footHTML ? `<div class="modal__foot">${footHTML}</div>` : ''}
+    </div>`;
+    ov.classList.add('open');
+    const close = () => ov.classList.remove('open');
+    el('amodalClose').onclick = close;
+    ov.onclick = (e) => { if (e.target === ov) close(); };
+    return { root: ov, close };
+  }
+
   window.Admin = {
     db, CONFIGURED, currentUser, isAdmin, signIn, signOut, requireAdmin,
-    mountShell, renderNotConfigured, money, esc, el, toast, count, NAV
+    mountShell, renderNotConfigured, money, esc, el, toast, count, NAV,
+    slugify, upload, openModal
   };
 })();

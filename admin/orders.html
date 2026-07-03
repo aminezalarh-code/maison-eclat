@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Commandes — BELORYA Admin</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="lib.js"></script>
+  <script>
+    (async () => {
+      const user = await Admin.requireAdmin(); if (!user) return;
+      const db = Admin.db(); const { esc, el, toast, money, openModal } = Admin;
+      const STATUSES = [['pending','En attente','warn'],['confirmed','Confirmée','gold'],['shipped','Expédiée','muted'],['delivered','Livrée','ok'],['cancelled','Annulée','bad']];
+      const smap = Object.fromEntries(STATUSES.map(([k,l,c]) => [k, { l, c }]));
+      const pill = (s) => `<span class="pill pill--${(smap[s]||{}).c||'muted'}"><span class="dot"></span>${(smap[s]||{}).l||s}</span>`;
+      const fmt = (d) => new Date(d).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
+
+      Admin.mountShell('orders.html', 'Commandes',
+        `<select class="select" id="fStatus" style="max-width:180px"><option value="">Tous statuts</option>${STATUSES.map(([k,l]) => `<option value="${k}">${l}</option>`).join('')}</select>`,
+        `<div class="card"><div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>#</th><th>Date</th><th>Client</th><th>Total</th><th>Zone</th><th>Promo</th><th>Statut</th><th class="right"></th></tr></thead>
+          <tbody id="rows"><tr><td colspan="8"><div class="empty">Chargement…</div></td></tr></tbody>
+        </table></div></div>`);
+
+      let ALL = [];
+      async function load() {
+        const { data, error } = await db.from('orders').select('*').order('created_at', { ascending: false });
+        if (error) { el('rows').innerHTML = `<tr><td colspan="8"><div class="empty">${esc(error.message)}</div></td></tr>`; return; }
+        ALL = data || []; render();
+      }
+      function render() {
+        const fs = el('fStatus').value;
+        const list = ALL.filter(o => !fs || o.status === fs);
+        el('rows').innerHTML = list.length ? list.map(o => `<tr>
+          <td class="tbl__name">#${o.id}</td><td>${fmt(o.created_at)}</td>
+          <td>${esc(o.customer_name)||'<span class="muted">—</span>'}<div class="tbl__sub">${esc(o.phone)||''}</div></td>
+          <td>${money(o.total)}</td><td>${o.shipping_zone === 'outside' ? 'Hors Casa' : 'Casablanca'}</td>
+          <td>${o.promo_code ? `<code>${esc(o.promo_code)}</code>` : '—'}</td>
+          <td>${pill(o.status)}</td>
+          <td class="right"><button class="btn btn--sm" data-view="${o.id}">Voir</button></td></tr>`).join('')
+          : `<tr><td colspan="8"><div class="empty">Aucune commande.</div></td></tr>`;
+        el('rows').querySelectorAll('[data-view]').forEach(b => b.onclick = () => view(b.dataset.view));
+      }
+      async function view(oid) {
+        const o = ALL.find(x => String(x.id) === String(oid));
+        const { data: items } = await db.from('order_items').select('*').eq('order_id', oid);
+        const rows = (items||[]).map(it => `<tr><td>${esc(it.product_name)}${it.variant ? ` <span class="muted">(${esc(it.variant)})</span>`:''}</td>
+          <td class="right">×${it.qty}</td><td class="right">${money((it.unit_price||0)*it.qty)}</td></tr>`).join('')
+          || '<tr><td colspan="3" class="muted">—</td></tr>';
+        const m = openModal(`Commande #${o.id}`, `
+          <div class="row" style="margin-bottom:14px">
+            <div><div class="muted" style="font-size:.75rem">Client</div><div>${esc(o.customer_name)||'—'}</div>
+              <div class="muted" style="font-size:.75rem;margin-top:8px">Téléphone</div><div>${esc(o.phone)||'—'}</div></div>
+            <div><div class="muted" style="font-size:.75rem">Adresse</div><div>${esc(o.address)||'—'}</div>
+              <div class="muted" style="font-size:.75rem;margin-top:8px">Zone</div><div>${o.shipping_zone==='outside'?'Hors Casablanca':'Casablanca'}</div></div>
+          </div>
+          <table class="tbl" style="margin-bottom:14px"><thead><tr><th>Produit</th><th class="right">Qté</th><th class="right">Total</th></tr></thead><tbody>${rows}</tbody></table>
+          <div style="display:grid;gap:4px;font-size:.9rem">
+            <div style="display:flex;justify-content:space-between"><span class="muted">Sous-total</span><span>${money(o.subtotal)}</span></div>
+            ${o.discount ? `<div style="display:flex;justify-content:space-between"><span class="muted">Remise ${o.promo_code?`(${esc(o.promo_code)})`:''}</span><span>−${money(o.discount)}</span></div>`:''}
+            <div style="display:flex;justify-content:space-between"><span class="muted">Livraison</span><span>${o.shipping ? money(o.shipping) : 'Gratuite'}</span></div>
+            <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.05rem;margin-top:4px"><span>Total</span><span>${money(o.total)}</span></div>
+          </div>
+          <div class="field" style="margin-top:18px"><label>Statut</label>
+            <select class="select" id="oStatus">${STATUSES.map(([k,l]) => `<option value="${k}" ${o.status===k?'selected':''}>${l}</option>`).join('')}</select></div>`,
+          `<button class="btn" id="oClose">Fermer</button><button class="btn btn--gold" id="oSave">Mettre à jour</button>`);
+        el('oClose').onclick = m.close;
+        el('oSave').onclick = async () => {
+          const { error } = await db.from('orders').update({ status: el('oStatus').value }).eq('id', o.id);
+          if (error) return toast(error.message, 'bad');
+          toast('Statut mis à jour'); m.close(); load();
+        };
+      }
+      el('fStatus').onchange = render;
+      load();
+    })();
+  </script>
+</body>
+</html>

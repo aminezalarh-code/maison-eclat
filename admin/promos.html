@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Codes promo — BELORYA Admin</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="lib.js"></script>
+  <script>
+    (async () => {
+      const user = await Admin.requireAdmin(); if (!user) return;
+      const db = Admin.db(); const { esc, el, toast, money, openModal } = Admin;
+
+      Admin.mountShell('promos.html', 'Codes promo',
+        `<button class="btn btn--gold" id="add">+ Nouveau code</button>`,
+        `<div class="card"><div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>Code</th><th>Réduction</th><th>Min. commande</th><th>Expiration</th><th>Utilisations</th><th>Statut</th><th class="right">Actions</th></tr></thead>
+          <tbody id="rows"><tr><td colspan="7"><div class="empty">Chargement…</div></td></tr></tbody>
+        </table></div></div>`);
+
+      const fmtDiscount = (p) => p.discount_type === 'percent' ? `${p.discount_value}%` : money(p.discount_value);
+      const fmtDate = (d) => d ? new Date(d).toLocaleDateString('fr-FR') : '—';
+
+      async function load() {
+        const { data, error } = await db.from('promo_codes').select('*').order('created_at', { ascending: false });
+        if (error) { el('rows').innerHTML = `<tr><td colspan="7"><div class="empty">${esc(error.message)}</div></td></tr>`; return; }
+        el('rows').innerHTML = (data && data.length) ? data.map(p => `<tr>
+          <td class="tbl__name"><code>${esc(p.code)}</code></td>
+          <td>${fmtDiscount(p)}</td>
+          <td>${p.min_order ? money(p.min_order) : '—'}</td>
+          <td>${fmtDate(p.expires_at)}</td>
+          <td>${p.used_count || 0}${p.usage_limit ? ' / ' + p.usage_limit : ''}</td>
+          <td><span class="pill pill--${p.active ? 'ok' : 'muted'}"><span class="dot"></span>${p.active ? 'Actif' : 'Inactif'}</span></td>
+          <td class="right" style="white-space:nowrap">
+            <button class="btn btn--sm" data-tog="${p.id}" data-a="${p.active}">${p.active ? 'Désactiver' : 'Activer'}</button>
+            <button class="btn btn--sm" data-edit='${esc(JSON.stringify(p))}'>Modifier</button>
+            <button class="btn btn--sm btn--danger" data-del="${p.id}">✕</button></td></tr>`).join('')
+          : `<tr><td colspan="7"><div class="empty">Aucun code promo.</div></td></tr>`;
+        el('rows').querySelectorAll('[data-tog]').forEach(b => b.onclick = async () => {
+          await db.from('promo_codes').update({ active: b.dataset.a !== 'true' }).eq('id', b.dataset.tog); load();
+        });
+        el('rows').querySelectorAll('[data-edit]').forEach(b => b.onclick = () => form(JSON.parse(b.dataset.edit)));
+        el('rows').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+          if (!confirm('Supprimer ce code ?')) return;
+          await db.from('promo_codes').delete().eq('id', b.dataset.del); toast('Code supprimé'); load();
+        });
+      }
+
+      function form(p) {
+        p = p || { discount_type: 'percent', active: true, min_order: 0 };
+        const m = openModal(p.id ? 'Modifier le code' : 'Nouveau code promo', `
+          <div class="row">
+            <div class="field"><label>Code</label><input class="input" id="pCode" value="${esc(p.code)||''}" style="text-transform:uppercase"></div>
+            <div class="field"><label>Type</label><select class="select" id="pType">
+              <option value="percent" ${p.discount_type==='percent'?'selected':''}>Pourcentage (%)</option>
+              <option value="fixed" ${p.discount_type==='fixed'?'selected':''}>Montant fixe (MAD)</option></select></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Valeur</label><input class="input" id="pVal" type="number" step="1" value="${p.discount_value??''}"></div>
+            <div class="field"><label>Commande min. (MAD)</label><input class="input" id="pMin" type="number" step="1" value="${p.min_order??0}"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Expiration</label><input class="input" id="pExp" type="date" value="${p.expires_at ? p.expires_at.slice(0,10) : ''}"></div>
+            <div class="field"><label>Limite d'utilisation</label><input class="input" id="pLimit" type="number" step="1" value="${p.usage_limit??''}" placeholder="illimité"></div>
+          </div>
+          <div class="field"><label class="check"><input type="checkbox" id="pActive" ${p.active?'checked':''}> Actif</label></div>`,
+          `<button class="btn" id="pCancel">Annuler</button><button class="btn btn--gold" id="pSave">Enregistrer</button>`);
+        el('pCancel').onclick = m.close;
+        el('pSave').onclick = async () => {
+          const rec = {
+            code: el('pCode').value.trim().toUpperCase(),
+            discount_type: el('pType').value,
+            discount_value: Number(el('pVal').value || 0),
+            min_order: Number(el('pMin').value || 0),
+            expires_at: el('pExp').value ? new Date(el('pExp').value).toISOString() : null,
+            usage_limit: el('pLimit').value === '' ? null : Number(el('pLimit').value),
+            active: el('pActive').checked
+          };
+          if (!rec.code) return toast('Code requis', 'bad');
+          if (!(rec.discount_value > 0)) return toast('Valeur invalide', 'bad');
+          const res = p.id ? await db.from('promo_codes').update(rec).eq('id', p.id) : await db.from('promo_codes').insert(rec);
+          if (res.error) return toast(res.error.message, 'bad');
+          toast('Code enregistré'); m.close(); load();
+        };
+      }
+      el('add').onclick = () => form();
+      load();
+    })();
+  </script>
+</body>
+</html>
