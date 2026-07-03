@@ -236,7 +236,6 @@ function renderFooter() {
               <li>${t('footer_city')}</li>
               <li><a href="mailto:${EMAIL}">${EMAIL}</a></li>
               <li><a href="${SOCIALS.whatsapp}" target="_blank" rel="noopener">+212 660 323 891</a></li>
-              <li>${t('footer_hours')}</li>
             </ul>
             <a class="footer__wa" href="${SOCIALS.whatsapp}" target="_blank" rel="noopener">${ICONS.wa} ${t('cart_wa')}</a>
           </div>

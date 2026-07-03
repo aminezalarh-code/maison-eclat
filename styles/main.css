@@ -610,7 +610,7 @@ body.menu-open .mobile-menu a { animation: menuIn .6s var(--ease) forwards; }
 /* ---------- Footer ---------- */
 .site-footer { position: relative; z-index: 2; border-top: 1px solid var(--line); background: var(--charcoal); padding-top: clamp(2.8rem, 5vw, 4.2rem); }
 .footer__top { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.2fr; gap: 2.5rem; }
-.footer__brand .brand { align-items: flex-start; }
+.footer__brand .brand { align-items: flex-start; height: auto; }
 .footer__brand .brand__name, .footer__brand .brand__tag { text-indent: 0; }
 .footer__brand p { color: var(--muted); margin-top: 1.4rem; max-width: 36ch; font-size: 0.97rem; line-height: 1.7; }
 .footer__socials { display: flex; gap: 0.8rem; margin-top: 1.6rem; }
