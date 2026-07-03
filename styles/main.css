@@ -207,11 +207,11 @@ h1, h2, h3, h4 { font-family: var(--display); font-weight: 500; color: var(--ivo
   display: flex; flex-direction: column; align-items: flex-start; line-height: 1;
   text-align: left;
 }
-.brand__logo { height: 66px; width: auto; display: block; }
+.brand__logo { height: 132px; width: auto; display: block; }
 .brand__fallback { display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
 .brand__logo.hide, .brand__fallback.hide { display: none; }
-.mobile-mark { height: 62px; }
-.footer-mark { height: 109px; }
+.mobile-mark { height: 124px; }
+.footer-mark { height: 218px; }
 .brand__name {
   font-family: var(--display);
   font-size: 1.32rem;
