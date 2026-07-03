@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shop the Collection | Stainless Steel Jewelry - Belorya</title>
-  <meta name="description" content="Browse the full Belorya collection of acier inoxydable jewellery: necklaces, matching sets (parures) and earrings. Filter and sort to find your piece." />
+  <title>La Collection | Bijoux en acier inoxydable - BELORYA</title>
+  <meta name="description" content="Parcourez toute la collection BELORYA en acier inoxydable : colliers, parures et boucles d'oreilles. Filtrez et triez pour trouver votre pièce. Livraison gratuite à Casablanca." />
   <meta name="theme-color" content="#0a0a0b" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,11 +17,13 @@
   <main>
     <section class="page-hero">
       <div class="wrap">
-        <div class="breadcrumb" data-reveal><a href="index.html">Home</a><span>/</span><span>Collections</span></div>
-        <h1 data-reveal data-delay="1">The <em>Collection</em></h1>
-        <p data-reveal data-delay="2">Refined stainless-steel jewellery in acier inoxydable, every piece finished by hand and made for everyday wear.</p>
+        <div class="breadcrumb" data-reveal><a href="index.html" data-i18n="nav_home">Accueil</a><span>/</span><span data-i18n="nav_collections">Collection</span></div>
+        <h1 data-reveal data-delay="1" data-i18n-html="colpage_title">La <em>Collection</em></h1>
+        <p data-reveal data-delay="2" data-i18n="colpage_sub">Des bijoux raffinés en acier inoxydable, pensés pour être portés chaque jour.</p>
       </div>
     </section>
+
+    <div class="trust-bar-mount"></div>
 
     <section class="wrap">
       <div class="toolbar">
@@ -29,13 +31,13 @@
         <div style="display:flex;align-items:center;gap:1.4rem;flex-wrap:wrap">
           <span class="results-count" id="resultsCount"></span>
           <div class="sort">
-            <label for="sortSelect">Sort</label>
+            <label for="sortSelect" data-i18n="sort_label">Trier</label>
             <select id="sortSelect">
-              <option value="featured">Featured</option>
-              <option value="new">Newest</option>
-              <option value="best">Best Sellers</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
+              <option value="featured" data-i18n="s_featured">En vedette</option>
+              <option value="new" data-i18n="s_new">Plus récent</option>
+              <option value="best" data-i18n="s_best">Meilleures ventes</option>
+              <option value="price-asc" data-i18n="s_price_asc">Prix croissant</option>
+              <option value="price-desc" data-i18n="s_price_desc">Prix décroissant</option>
             </select>
           </div>
         </div>
@@ -49,6 +51,7 @@
 
   <div id="site-footer"></div>
 
+  <script src="js/i18n.js"></script>
   <script src="js/products.js"></script>
   <script src="js/app.js"></script>
 </body>

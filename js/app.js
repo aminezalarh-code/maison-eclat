@@ -1,15 +1,29 @@
 /* ============================================================
-   MAISON ÉCLAT - App logic
-   Header/footer injection · mobile menu · cart drawer (localStorage)
+   BELORYA - App logic
+   Announcement bar · header/footer · language switch (i18n.js)
+   · cart drawer with promo + shipping + WhatsApp order
    · scroll reveal · product rendering · collection filters · PDP
    ============================================================ */
 
-const WHATSAPP_NUMBER = '212600000000'; // ← replace with the brand's real number (international, no +)
+const WHATSAPP_NUMBER = '212660323891'; // Belorya WhatsApp (international, no +)
 const BRAND = 'Belorya';
 const TAGLINE = 'Eternal Shine';
-const LOGO_SRC = 'assets/logo.png'; // drop the real logo here; falls back to text wordmark
+const LOGO_SRC = 'assets/logo.png';
+const EMAIL = 'belorya1@gmail.com';
+const SOCIALS = {
+  instagram: 'https://www.instagram.com/belorya_/',
+  facebook: 'https://www.facebook.com/profile.php?id=61591102114678',
+  tiktok: 'https://www.tiktok.com/@belorya5',
+  whatsapp: `https://wa.me/${WHATSAPP_NUMBER}`
+};
 
-/* Brand lockup - uses the logo image if present, else an elegant text fallback */
+/* Promo + shipping rules */
+const PROMO_CODE = 'BELORYA10';
+const PROMO_RATE = 0.10;               // 10%
+const SHIP_FEE = 35;                   // MAD, outside Casablanca under threshold
+const SHIP_FREE_THRESHOLD = 250;       // MAD
+
+/* Brand lockup */
 function brandLockup(extraClass = '') {
   return `<img class="brand__logo ${extraClass}" src="${LOGO_SRC}" alt="${BRAND} - ${TAGLINE}"
       onerror="this.classList.add('hide');this.nextElementSibling.classList.remove('hide')">
@@ -24,21 +38,85 @@ const ICONS = {
   cart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 7h12l-1 12.5a1.5 1.5 0 0 1-1.5 1.4H8.5A1.5 1.5 0 0 1 7 19.5L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>',
   wa: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.8 14.2c-.2.7-1.4 1.3-2 1.4-.5.1-1.2.1-1.9-.1-.4-.1-1-.3-1.8-.6-3-1.3-5-4.4-5.2-4.6-.1-.2-1.2-1.6-1.2-3s.7-2.1 1-2.4c.2-.3.5-.4.7-.4h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.5-.3.3c-.1.2-.3.3-.1.6.1.3.7 1.1 1.4 1.8.9.8 1.7 1 2 1.2.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.6-.1l1.9.9c.3.1.5.2.5.4.1.1.1.8-.1 1.4Z"/></svg>',
   ig: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>',
+  fb: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 8.5V7c0-.7.3-1 1-1h1.5V3H14c-2.2 0-3.5 1.3-3.5 3.6V8.5H8.5V12h2V21h3.5v-9h2.4l.6-3.5H14Z"/></svg>',
   tiktok: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 3c.3 2.3 1.6 3.7 3.8 3.9v2.6c-1.3.1-2.5-.3-3.8-1v5.8c0 3.6-2.8 6-6 5.6-2.6-.3-4.4-2.4-4.3-5 .1-2.7 2.5-4.7 5.2-4.4v2.7c-.4-.1-.8-.2-1.2-.1-1.1.1-1.9 1-1.8 2.1.1 1 1 1.9 2.1 1.8 1.2-.1 1.9-1 1.9-2.3V3H16Z"/></svg>',
   arrow: '<svg viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 5h15M12 1l4 4-4 4"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 13l4 4L19 7"/></svg>',
   shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3Z"/><path d="M9 12l2 2 4-4"/></svg>',
   truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 7h11v8H3zM14 10h4l3 3v2h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>',
+  coins: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>',
   refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 16M4 20v-4h4"/></svg>'
 };
 
+/* Nav (labels resolved through i18n at render time) */
 const NAV_LINKS = [
-  { href: 'index.html', label: 'Home' },
-  { href: 'collections.html', label: 'Collections' },
-  { href: 'collections.html?sort=best', label: 'Best Sellers' },
-  { href: 'index.html#about', label: 'About' },
-  { href: 'index.html#contact', label: 'Contact' }
+  { href: 'index.html', key: 'nav_home' },
+  { href: 'collections.html', key: 'nav_collections' },
+  { href: 'collections.html?sort=best', key: 'nav_best' },
+  { href: 'index.html#about', key: 'nav_about' },
+  { href: 'index.html#contact', key: 'nav_contact' }
 ];
+
+/* Language switcher markup */
+function langSwitcher(extra = '') {
+  const lang = getLang();
+  return `<div class="lang-switch ${extra}" role="group" aria-label="Language">
+    <button class="lang-opt ${lang==='fr'?'active':''}" data-lang="fr">FR</button>
+    <span class="lang-sep">/</span>
+    <button class="lang-opt ${lang==='en'?'active':''}" data-lang="en">EN</button>
+  </div>`;
+}
+function bindLangSwitch(root = document) {
+  root.querySelectorAll('.lang-opt').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.lang !== getLang()) setLang(b.dataset.lang);
+  }));
+}
+
+/* ---------------- Announcement bar ---------------- */
+function announceBar() {
+  return `<div class="announce" id="announce">
+      <div class="wrap announce__in">
+        <span class="announce__msg announce__msg--full">${t('announce_text', { code: `<strong>${PROMO_CODE}</strong>` })}</span>
+        <span class="announce__msg announce__msg--short">${t('announce_short', { code: `<strong>${PROMO_CODE}</strong>` })}</span>
+        <button class="announce__copy" id="announceCopy" type="button">${ICONS.check}<span>${t('announce_copy')}</span></button>
+      </div>
+    </div>`;
+}
+function bindAnnounce() {
+  const btn = document.getElementById('announceCopy');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(PROMO_CODE);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = PROMO_CODE; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch {}
+      ta.remove();
+    }
+    btn.classList.add('copied');
+    btn.querySelector('span').textContent = t('announce_copied');
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.querySelector('span').textContent = t('announce_copy');
+    }, 2200);
+  });
+}
+
+/* ---------------- Trust bar (below hero / page hero) ---------------- */
+function renderTrustBar() {
+  document.querySelectorAll('.trust-bar-mount').forEach(mount => {
+    const items = [
+      [ICONS.truck, t('trust_free_casa')],
+      [ICONS.coins, t('trust_free_250')],
+      [ICONS.wa, t('trust_cod')],
+      [ICONS.shield, t('trust_steel')]
+    ];
+    mount.innerHTML = `<div class="wrap"><div class="trust-bar" data-reveal>
+      ${items.map(([ic, label]) => `<div class="trust-bar__item"><span class="trust-bar__ic">${ic}</span><span>${label}</span></div>`).join('')}
+    </div></div>`;
+  });
+}
 
 /* ---------------- Header ---------------- */
 function renderHeader() {
@@ -47,10 +125,11 @@ function renderHeader() {
   const page = document.body.dataset.page || '';
   const links = NAV_LINKS.map(l => {
     const active = (page === 'collections' && /collections/.test(l.href)) ? 'active' : '';
-    return `<li><a class="nav__link ${active}" href="${l.href}">${l.label}</a></li>`;
+    return `<li><a class="nav__link ${active}" href="${l.href}">${t(l.key)}</a></li>`;
   }).join('');
 
   mount.innerHTML = `
+    ${announceBar()}
     <header class="site-header" id="header">
       <div class="wrap nav">
         <a class="brand" href="index.html" aria-label="${BRAND} home">
@@ -58,7 +137,8 @@ function renderHeader() {
         </a>
         <ul class="nav__menu">${links}</ul>
         <div class="nav__right">
-          <a class="nav__cta" href="https://wa.me/${WHATSAPP_NUMBER}" target="_blank" rel="noopener">${ICONS.wa}<span>WhatsApp</span></a>
+          ${langSwitcher()}
+          <a class="nav__cta" href="${SOCIALS.whatsapp}" target="_blank" rel="noopener">${ICONS.wa}<span>${t('nav_whatsapp')}</span></a>
           <button class="icon-btn" id="cartOpen" aria-label="Open cart">
             ${ICONS.cart}<span class="cart-count" id="cartCount">0</span>
           </button>
@@ -67,15 +147,14 @@ function renderHeader() {
       </div>
     </header>
     <nav class="mobile-menu" id="mobileMenu" aria-hidden="true">
-      <ul>${NAV_LINKS.map((l,i)=>`<li><a href="${l.href}" style="animation-delay:${0.06*i}s">${l.label}</a></li>`).join('')}</ul>
-      <!-- mobile brand mark -->
+      <ul>${NAV_LINKS.map((l,i)=>`<li><a href="${l.href}" style="animation-delay:${0.06*i}s">${t(l.key)}</a></li>`).join('')}</ul>
       <div style="position:absolute;top:1.6rem;left:var(--gut)"><a class="brand" href="index.html">${brandLockup('mobile-mark')}</a></div>
       <div class="mobile-menu__foot">
-        <a class="footer__wa" href="https://wa.me/${WHATSAPP_NUMBER}" target="_blank" rel="noopener">${ICONS.wa} Order on WhatsApp</a>
+        ${langSwitcher('lang-switch--menu')}
+        <a class="footer__wa" href="${SOCIALS.whatsapp}" target="_blank" rel="noopener">${ICONS.wa} ${t('cart_wa')}</a>
       </div>
     </nav>`;
 
-  // scroll state
   const header = document.getElementById('header');
   const solid = page !== 'home';
   if (solid) header.classList.add('solid');
@@ -83,7 +162,6 @@ function renderHeader() {
   onScroll();
   window.addEventListener('scroll', onScroll, { passive: true });
 
-  // mobile menu
   const toggle = document.getElementById('navToggle');
   const menu = document.getElementById('mobileMenu');
   toggle.addEventListener('click', () => {
@@ -95,6 +173,8 @@ function renderHeader() {
   }));
 
   document.getElementById('cartOpen').addEventListener('click', openCart);
+  bindAnnounce();
+  bindLangSwitch(mount);
   updateCartCount();
 }
 
@@ -102,65 +182,79 @@ function renderHeader() {
 function renderFooter() {
   const mount = document.getElementById('site-footer');
   if (!mount) return;
-  const year = 2026;
   mount.innerHTML = `
     <footer class="site-footer" id="contact">
       <div class="wrap">
+        <div class="footer__ship">
+          <div><span class="footer__ship-ic">${ICONS.truck}</span>${t('trust_free_casa')}</div>
+          <div><span class="footer__ship-ic">${ICONS.coins}</span>${t('trust_free_250')}</div>
+          <div><span class="footer__ship-ic">${ICONS.wa}</span>${t('trust_cod')}</div>
+          <div><span class="footer__ship-ic">${ICONS.shield}</span>${t('trust_steel')}</div>
+        </div>
         <div class="footer__top">
           <div class="footer__brand">
             <a class="brand" href="index.html">${brandLockup('footer-mark')}</a>
-            <p>Refined stainless-steel jewellery, designed in the studio and made to be worn every day. Accessible luxury, built to last.</p>
+            <p>${t('footer_desc')}</p>
             <div class="footer__socials">
-              <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram">${ICONS.ig}</a>
-              <a href="https://tiktok.com" target="_blank" rel="noopener" aria-label="TikTok">${ICONS.tiktok}</a>
-              <a href="https://wa.me/${WHATSAPP_NUMBER}" target="_blank" rel="noopener" aria-label="WhatsApp">${ICONS.wa}</a>
+              <a href="${SOCIALS.instagram}" target="_blank" rel="noopener" aria-label="Instagram">${ICONS.ig}</a>
+              <a href="${SOCIALS.facebook}" target="_blank" rel="noopener" aria-label="Facebook">${ICONS.fb}</a>
+              <a href="${SOCIALS.tiktok}" target="_blank" rel="noopener" aria-label="TikTok">${ICONS.tiktok}</a>
+              <a href="${SOCIALS.whatsapp}" target="_blank" rel="noopener" aria-label="WhatsApp">${ICONS.wa}</a>
             </div>
           </div>
           <div class="footer__col">
-            <h5>Collections</h5>
+            <h5>${t('footer_collections')}</h5>
             <ul>
-              <li><a href="collections.html?cat=necklaces">Necklaces</a></li>
-              <li><a href="collections.html?cat=sets">Sets</a></li>
-              <li><a href="collections.html?cat=earrings">Earrings</a></li>
-              <li><a href="collections.html?sort=best">Best Sellers</a></li>
-              <li><a href="collections.html?sort=new">New Arrivals</a></li>
+              <li><a href="collections.html?cat=necklaces">${t('footer_l_necklaces')}</a></li>
+              <li><a href="collections.html?cat=sets">${t('footer_l_sets')}</a></li>
+              <li><a href="collections.html?cat=earrings">${t('footer_l_earrings')}</a></li>
+              <li><a href="collections.html?sort=best">${t('footer_l_best')}</a></li>
+              <li><a href="collections.html?sort=new">${t('footer_l_new')}</a></li>
             </ul>
           </div>
           <div class="footer__col">
-            <h5>Maison</h5>
+            <h5>${t('footer_maison')}</h5>
             <ul>
-              <li><a href="index.html#about">Our Story</a></li>
-              <li><a href="index.html#material">Materials</a></li>
-              <li><a href="collections.html?sort=best">Best Sellers</a></li>
-              <li><a href="collections.html?sort=new">New Arrivals</a></li>
-              <li><a href="index.html#newsletter">Private List</a></li>
+              <li><a href="index.html#about">${t('footer_l_story')}</a></li>
+              <li><a href="index.html#material">${t('footer_l_materials')}</a></li>
+              <li><a href="collections.html?sort=best">${t('footer_l_best')}</a></li>
+              <li><a href="collections.html?cat=promo">${t('footer_l_promo')}</a></li>
+              <li><a href="index.html#newsletter">${t('footer_l_private')}</a></li>
             </ul>
           </div>
           <div class="footer__col">
-            <h5>Contact</h5>
+            <h5>${t('footer_contact')}</h5>
             <ul>
-              <li>Casablanca, Morocco</li>
-              <li><a href="mailto:hello@belorya.com">hello@belorya.com</a></li>
-              <li>Mon–Sat · 10:00–19:00</li>
+              <li>${t('footer_city')}</li>
+              <li><a href="mailto:${EMAIL}">${EMAIL}</a></li>
+              <li><a href="${SOCIALS.whatsapp}" target="_blank" rel="noopener">+212 660 323 891</a></li>
+              <li>${t('footer_hours')}</li>
             </ul>
-            <a class="footer__wa" href="https://wa.me/${WHATSAPP_NUMBER}" target="_blank" rel="noopener">${ICONS.wa} Order on WhatsApp</a>
+            <a class="footer__wa" href="${SOCIALS.whatsapp}" target="_blank" rel="noopener">${ICONS.wa} ${t('cart_wa')}</a>
           </div>
         </div>
         <div class="footer__bottom">
-          <p>© ${year} ${BRAND}. All rights reserved.</p>
+          <p>© 2026 ${BRAND}. ${t('footer_rights')}</p>
           <div class="footer__pay">
-            <span>COD</span><span>WhatsApp</span>
+            <span>${t('trust_cod')}</span><span>WhatsApp</span>
           </div>
-          <p><a href="#">Privacy</a> · <a href="#">Terms</a></p>
+          <p><a href="#">${t('footer_privacy')}</a> · <a href="#">${t('footer_terms')}</a></p>
         </div>
       </div>
     </footer>`;
 }
 
-/* ---------------- Cart drawer ---------------- */
+/* ---------------- Cart state ---------------- */
 const CART_KEY = 'eclat_cart';
+const PROMO_KEY = 'belorya_promo';
+const ZONE_KEY = 'belorya_zone';
+
 function getCart() { try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch { return []; } }
 function saveCart(c) { localStorage.setItem(CART_KEY, JSON.stringify(c)); updateCartCount(); }
+function getPromo() { return localStorage.getItem(PROMO_KEY) === PROMO_CODE ? PROMO_CODE : null; }
+function setPromo(v) { if (v) localStorage.setItem(PROMO_KEY, v); else localStorage.removeItem(PROMO_KEY); }
+function getZone() { return localStorage.getItem(ZONE_KEY) === 'outside' ? 'outside' : 'casablanca'; }
+function setZone(z) { localStorage.setItem(ZONE_KEY, z === 'outside' ? 'outside' : 'casablanca'); }
 
 function addToCart(id, qty = 1) {
   const p = PRODUCTS.find(x => x.id === id);
@@ -170,7 +264,7 @@ function addToCart(id, qty = 1) {
   if (found) found.qty += qty; else cart.push({ id, qty });
   saveCart(cart);
   renderCart();
-  toast(`${p.name} added to your bag`);
+  toast(t('cart_added', { name: p.name }));
 }
 function setQty(id, qty) {
   let cart = getCart();
@@ -178,7 +272,7 @@ function setQty(id, qty) {
   else { const it = cart.find(i => i.id === id); if (it) it.qty = qty; }
   saveCart(cart); renderCart();
 }
-function cartTotal() {
+function cartSubtotal() {
   return getCart().reduce((s, i) => {
     const p = PRODUCTS.find(x => x.id === i.id); return s + (p ? p.price * i.qty : 0);
   }, 0);
@@ -192,6 +286,19 @@ function updateCartCount() {
   el.classList.toggle('show', n > 0);
 }
 
+/* single source of truth for the order maths */
+function computeTotals() {
+  const subtotal = cartSubtotal();
+  const promo = getPromo();
+  const discount = promo ? Math.round(subtotal * PROMO_RATE) : 0;
+  const zone = getZone();
+  let shipping = 0;
+  if (zone === 'outside') shipping = subtotal >= SHIP_FREE_THRESHOLD ? 0 : SHIP_FEE;
+  const total = Math.max(0, subtotal - discount + shipping);
+  return { subtotal, promo, discount, zone, shipping, total };
+}
+
+/* ---------------- Cart drawer ---------------- */
 function ensureCartDOM() {
   if (document.getElementById('cartDrawer')) return;
   const div = document.createElement('div');
@@ -199,17 +306,11 @@ function ensureCartDOM() {
     <div class="cart-overlay" id="cartOverlay"></div>
     <aside class="cart-drawer" id="cartDrawer" aria-label="Shopping bag" aria-hidden="true">
       <div class="cart-drawer__head">
-        <h3>Your Bag <span id="cartHeadCount"></span></h3>
+        <h3>${t('cart_title')} <span id="cartHeadCount"></span></h3>
         <button class="cart-close" id="cartClose" aria-label="Close">✕</button>
       </div>
       <div class="cart-body" id="cartBody"></div>
-      <div class="cart-foot" id="cartFoot" hidden>
-        <div class="cart-foot__row"><span>Subtotal</span><span id="cartSubtotal"></span></div>
-        <div class="cart-foot__row"><span>Shipping</span><span>Calculated at checkout</span></div>
-        <div class="cart-foot__row total"><span>Total</span><span id="cartTotal"></span></div>
-        <a class="btn btn--gold btn--block" id="cartCheckout">Checkout</a>
-        <button class="btn btn--block btn--ghost" id="cartWa" style="margin-top:.7rem">${ICONS.wa} Order on WhatsApp</button>
-      </div>
+      <div class="cart-foot" id="cartFoot" hidden></div>
     </aside>`;
   document.body.appendChild(div);
   document.getElementById('cartOverlay').addEventListener('click', closeCart);
@@ -225,8 +326,8 @@ function renderCart() {
   const cart = getCart();
   document.getElementById('cartHeadCount').textContent = cartCount() ? `(${cartCount()})` : '';
   if (!cart.length) {
-    body.innerHTML = `<div class="cart-empty">${ICONS.cart}<p>Your bag is empty</p>
-      <a class="btn btn--ghost btn--sm" href="collections.html" style="margin-top:1.4rem">Explore the collection</a></div>`;
+    body.innerHTML = `<div class="cart-empty">${ICONS.cart}<p>${t('cart_empty')}</p>
+      <a class="btn btn--ghost btn--sm" href="collections.html" style="margin-top:1.4rem">${t('cart_explore')}</a></div>`;
     foot.hidden = true; return;
   }
   body.innerHTML = cart.map(i => {
@@ -237,42 +338,98 @@ function renderCart() {
         <a href="product.html?id=${p.id}" class="cart-item__name">${p.name}</a>
         <div class="cart-item__mat">${p.material}</div>
         <div class="qty">
-          <button onclick="setQty('${p.id}',${i.qty-1})" aria-label="Decrease">−</button>
+          <button onclick="setQty('${p.id}',${i.qty-1})" aria-label="${t('pdp_dec')}">−</button>
           <span>${i.qty}</span>
-          <button onclick="setQty('${p.id}',${i.qty+1})" aria-label="Increase">+</button>
+          <button onclick="setQty('${p.id}',${i.qty+1})" aria-label="${t('pdp_inc')}">+</button>
         </div>
       </div>
       <div class="cart-item__right">
         <div class="cart-item__price">${formatPrice(p.price * i.qty)}</div>
-        <button class="cart-item__remove" onclick="setQty('${p.id}',0)">Remove</button>
+        <button class="cart-item__remove" onclick="setQty('${p.id}',0)">${t('cart_remove')}</button>
       </div>
     </div>`;
   }).join('');
+
+  const T = computeTotals();
+  const promoOn = !!T.promo;
+  const zone = T.zone;
   foot.hidden = false;
-  document.getElementById('cartSubtotal').textContent = formatPrice(cartTotal());
-  document.getElementById('cartTotal').textContent = formatPrice(cartTotal());
+  foot.innerHTML = `
+    <div class="cart-promo">
+      <label class="cart-sub-label">${t('cart_promo_label')}</label>
+      <div class="cart-promo__row">
+        <input type="text" id="promoInput" placeholder="${t('cart_promo_ph')}" value="${promoOn ? PROMO_CODE : ''}" ${promoOn ? 'disabled' : ''} autocomplete="off" spellcheck="false">
+        <button class="btn btn--ghost btn--sm" id="promoApply">${t('cart_promo_apply')}</button>
+      </div>
+      <p class="cart-promo__msg ${promoOn ? 'ok' : ''}" id="promoMsg">${promoOn ? ICONS.check + ' ' + t('cart_promo_ok') : ''}</p>
+    </div>
+
+    <div class="cart-zone">
+      <label class="cart-sub-label">${t('cart_zone_label')}</label>
+      <div class="cart-zone__opts">
+        <label class="cart-zone__opt ${zone==='casablanca'?'active':''}"><input type="radio" name="zone" value="casablanca" ${zone==='casablanca'?'checked':''}><span>${t('cart_zone_casa')}</span></label>
+        <label class="cart-zone__opt ${zone==='outside'?'active':''}"><input type="radio" name="zone" value="outside" ${zone==='outside'?'checked':''}><span>${t('cart_zone_out')}</span></label>
+      </div>
+    </div>
+
+    <div class="cart-summary">
+      <div class="cart-foot__row"><span>${t('cart_subtotal')}</span><span>${formatPrice(T.subtotal)}</span></div>
+      ${T.discount > 0 ? `<div class="cart-foot__row discount"><span>${t('cart_discount')}</span><span>−${formatPrice(T.discount)}</span></div>` : ''}
+      <div class="cart-foot__row"><span>${t('cart_shipping')}</span><span>${T.shipping === 0 ? t('cart_free') : formatPrice(T.shipping)}</span></div>
+      <div class="cart-foot__row total"><span>${t('cart_total')}</span><span>${formatPrice(T.total)}</span></div>
+      <div class="cart-foot__row eta"><span>${t('cart_eta_label')}</span><span>${t('cart_eta_val')}</span></div>
+    </div>
+
+    <button class="btn btn--gold btn--block" id="cartWa">${ICONS.wa} ${t('cart_wa')}</button>`;
+
+  // promo apply
+  const promoInput = document.getElementById('promoInput');
+  const promoMsg = document.getElementById('promoMsg');
+  document.getElementById('promoApply').onclick = () => {
+    if (getPromo()) { setPromo(null); renderCart(); return; } // second click clears
+    const code = (promoInput.value || '').trim().toUpperCase();
+    if (code === PROMO_CODE) {
+      setPromo(PROMO_CODE); renderCart();
+    } else {
+      promoMsg.className = 'cart-promo__msg bad';
+      promoMsg.textContent = t('cart_promo_bad');
+    }
+  };
+  if (getPromo()) document.getElementById('promoApply').textContent = t('cart_remove');
+
+  // zone radios -> instant recalc
+  foot.querySelectorAll('input[name="zone"]').forEach(r => r.addEventListener('change', () => {
+    setZone(r.value); renderCart();
+  }));
+
   document.getElementById('cartWa').onclick = waOrderCart;
-  document.getElementById('cartCheckout').onclick = (e) => { e.preventDefault(); toast('Checkout is a demo, connect your payment provider.'); };
 }
 
 function waOrderCart() {
   const cart = getCart();
   if (!cart.length) return;
-  let msg = `Bonjour ${BRAND} 👋%0AJe souhaite commander :%0A`;
-  cart.forEach(i => { const p = PRODUCTS.find(x => x.id === i.id); if (p) msg += `• ${p.name} × ${i.qty} - ${formatPrice(p.price*i.qty)}%0A`; });
-  msg += `%0ATotal : ${formatPrice(cartTotal())}`;
-  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, '_blank');
+  const T = computeTotals();
+  const NL = '%0A';
+  let msg = `${t('wa_hello')}${NL}${NL}${t('wa_want')}${NL}`;
+  cart.forEach(i => { const p = PRODUCTS.find(x => x.id === i.id); if (p) msg += `• ${p.name} ×${i.qty}${NL}`; });
+  msg += `${NL}${t('wa_subtotal')} : ${formatPrice(T.subtotal)}${NL}`;
+  if (T.promo) msg += `${t('wa_promo')} : ${PROMO_CODE}${NL}${t('wa_discount')} : −${formatPrice(T.discount)}${NL}`;
+  msg += `${t('wa_shipping')} : ${T.zone === 'outside' ? t('cart_zone_out') : t('cart_zone_casa')}${NL}`;
+  msg += `${t('wa_shipping_fee')} : ${T.shipping === 0 ? t('wa_free') : formatPrice(T.shipping)}${NL}`;
+  msg += `${t('wa_total')} : ${formatPrice(T.total)}${NL}${NL}`;
+  msg += `${t('wa_name')} :${NL}${t('wa_phone')} :${NL}${t('wa_address')} :${NL}${NL}${t('wa_thanks')}`;
+  window.open(`${SOCIALS.whatsapp}?text=${msg}`, '_blank');
 }
 
 /* ---------------- Toast ---------------- */
 let toastTimer;
 function toast(text) {
-  let t = document.getElementById('toast');
-  if (!t) { t = document.createElement('div'); t.className = 'toast'; t.id = 'toast'; document.body.appendChild(t); }
-  t.innerHTML = `${ICONS.check}<span>${text}</span>`;
-  requestAnimationFrame(() => t.classList.add('show'));
+  let el = document.getElementById('toast');
+  if (!el) { el = document.createElement('div'); el.className = 'toast'; el.id = 'toast'; document.body.appendChild(el); }
+  el.innerHTML = `${ICONS.check}<span>${text}</span>`;
+  requestAnimationFrame(() => el.classList.add('show'));
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
 /* ---------------- Scroll reveal ---------------- */
@@ -285,30 +442,33 @@ function initReveal() {
   els.forEach(e => io.observe(e));
 }
 
-/* ---------------- Product card markup ---------------- */
+/* ---------------- Product helpers ---------------- */
 function badgeClass(b) { return b === 'New' ? 'new' : b === 'Limited' ? 'limited' : ''; }
+function discountPct(p) { return p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0; }
+function isOnSale(p) { return !!p.oldPrice && p.oldPrice > p.price; }
 
 function productCard(p, delay = 0) {
   const badge = p.badge ? `<span class="product-badge ${badgeClass(p.badge)}">${p.badge}</span>` : '';
-  const old = p.oldPrice ? `<s>${formatPrice(p.oldPrice)}</s>` : '';
-  const priceBlock = `<div class="product-card__price">${old}<span class="now">${formatPrice(p.price)}</span></div>`;
+  const sale = isOnSale(p) ? `<span class="sale-badge">-${discountPct(p)}%</span>` : '';
+  const old = isOnSale(p) ? `<s>${formatPrice(p.oldPrice)}</s>` : '';
+  const priceBlock = `<div class="product-card__price">${old}<span class="now ${isOnSale(p)?'sale':''}">${formatPrice(p.price)}</span></div>`;
   return `<article class="product-card" data-reveal data-delay="${delay}">
     <div class="product-card__media">
       <a href="product.html?id=${p.id}" aria-label="${p.name}">${productMedia(p)}</a>
-      ${badge}
+      ${badge}${sale}
       <div class="product-quick">
-        <button class="btn btn--gold btn--block btn--sm" onclick="addToCart('${p.id}')">Add to Bag - ${formatPrice(p.price)}</button>
+        <button class="btn btn--gold btn--block btn--sm" onclick="addToCart('${p.id}')">${t('card_add', { price: formatPrice(p.price) })}</button>
       </div>
     </div>
     <div class="product-card__body">
-      <div class="product-card__cat">${CATEGORY_LABELS[p.category] || p.category}</div>
+      <div class="product-card__cat">${catLabel(p.category)}</div>
       <h3 class="product-card__name"><a href="product.html?id=${p.id}">${p.name}</a></h3>
       <div class="product-card__mat">${p.material}</div>
       <div class="product-card__foot">
         ${priceBlock}
         <div class="product-card__actions">
-          <a class="link-arrow" href="product.html?id=${p.id}">View Details ${ICONS.arrow}</a>
-          <button class="card-wa" aria-label="Order ${p.name} on WhatsApp" title="Order on WhatsApp" onclick="waProduct('${p.id}')">${ICONS.wa}</button>
+          <a class="link-arrow" href="product.html?id=${p.id}">${t('card_view')} ${ICONS.arrow}</a>
+          <button class="card-wa" aria-label="Order ${p.name} on WhatsApp" title="${t('cart_wa')}" onclick="waProduct('${p.id}')">${ICONS.wa}</button>
         </div>
       </div>
     </div>
@@ -317,8 +477,8 @@ function productCard(p, delay = 0) {
 
 function waProduct(id) {
   const p = PRODUCTS.find(x => x.id === id); if (!p) return;
-  const msg = `Bonjour ${BRAND} 👋%0AJe suis intéressé(e) par : ${p.name} (${formatPrice(p.price)})`;
-  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, '_blank');
+  const msg = `${t('wa_hello')}%0A${t('wa_interested')} : ${p.name} (${formatPrice(p.price)})`;
+  window.open(`${SOCIALS.whatsapp}?text=${msg}`, '_blank');
 }
 
 /* ---------------- Home: best sellers ---------------- */
@@ -334,32 +494,45 @@ function renderCollectionsPage() {
   const mount = document.getElementById('collection-grid');
   if (!mount) return;
   const params = new URLSearchParams(location.search);
-  let cat = params.get('cat') || 'all';
+  // support ?cat=necklaces|sets|earrings|promo and ?sort=new|best
+  let filter = params.get('cat') || (params.get('sort') === 'best' ? 'best' : params.get('sort') === 'new' ? 'new' : 'all');
   let sort = params.get('sort') || 'featured';
 
+  const FILTERS = [
+    ['all', t('f_all')], ['necklaces', catLabel('necklaces')], ['sets', catLabel('sets')],
+    ['earrings', catLabel('earrings')], ['new', t('f_new')], ['best', t('f_best')], ['promo', t('f_promo')]
+  ];
   const filterBar = document.getElementById('filters');
   const sortSel = document.getElementById('sortSelect');
-  const cats = ['all', ...Object.keys(CATEGORY_LABELS)];
-  filterBar.innerHTML = cats.map(c =>
-    `<button class="filter-chip ${c === cat ? 'active' : ''}" data-cat="${c}">${c === 'all' ? 'All Pieces' : CATEGORY_LABELS[c]}</button>`
+  filterBar.innerHTML = FILTERS.map(([key, label]) =>
+    `<button class="filter-chip ${key === filter ? 'active' : ''}" data-filter="${key}">${label}</button>`
   ).join('');
-  sortSel.value = sort;
+  sortSel.value = ['featured','new','best','price-asc','price-desc'].includes(sort) ? sort : 'featured';
+
+  function matchesFilter(p) {
+    if (filter === 'all') return true;
+    if (filter === 'new') return p.badge === 'New';
+    if (filter === 'best') return p.badge === 'Best Seller';
+    if (filter === 'promo') return isOnSale(p);
+    return p.category === filter;
+  }
 
   function apply() {
-    let list = PRODUCTS.filter(p => cat === 'all' || p.category === cat);
-    if (sort === 'price-asc') list.sort((a,b)=>a.price-b.price);
-    else if (sort === 'price-desc') list.sort((a,b)=>b.price-a.price);
+    let list = PRODUCTS.filter(matchesFilter);
+    if (sort === 'price-asc') list = list.slice().sort((a,b)=>a.price-b.price);
+    else if (sort === 'price-desc') list = list.slice().sort((a,b)=>b.price-a.price);
     else if (sort === 'new') list = list.filter(p=>p.badge==='New').concat(list.filter(p=>p.badge!=='New'));
     else if (sort === 'best') list = list.filter(p=>p.badge==='Best Seller').concat(list.filter(p=>p.badge!=='Best Seller'));
-    mount.innerHTML = list.map((p,i)=>productCard(p,(i%3)+1)).join('') || '<p style="color:var(--muted);padding:3rem 0">No pieces in this category yet.</p>';
-    document.getElementById('resultsCount').textContent = `${list.length} piece${list.length!==1?'s':''}`;
+    mount.innerHTML = list.map((p,i)=>productCard(p,(i%3)+1)).join('') || `<p style="color:var(--muted);padding:3rem 0">${t('empty_cat')}</p>`;
+    const n = list.length;
+    document.getElementById('resultsCount').textContent = `${n} ${t('result_word')}${n!==1?'s':''}`;
     initReveal();
-    const url = new URL(location); url.searchParams.set('cat',cat); url.searchParams.set('sort',sort); history.replaceState(null,'',url);
+    const url = new URL(location); url.searchParams.set('cat',filter); url.searchParams.set('sort',sort); history.replaceState(null,'',url);
   }
 
   filterBar.addEventListener('click', e => {
     const btn = e.target.closest('.filter-chip'); if (!btn) return;
-    cat = btn.dataset.cat;
+    filter = btn.dataset.filter;
     filterBar.querySelectorAll('.filter-chip').forEach(b=>b.classList.toggle('active', b===btn));
     apply();
   });
@@ -374,19 +547,24 @@ function renderProductPage() {
   const id = new URLSearchParams(location.search).get('id');
   const p = PRODUCTS.find(x => x.id === id) || PRODUCTS[0];
   const gallery = (p.images && p.images.length) ? p.images : [p.image];
+  const desc = pField(p, 'description');
   document.title = `${p.name} - ${BRAND}`;
 
   const stars = '★★★★★';
-  const old = p.oldPrice ? `<s>${formatPrice(p.oldPrice)}</s>` : '';
-  const save = p.oldPrice ? `<em>Économisez ${formatPrice(p.oldPrice - p.price)}</em>` : '';
+  const onSale = isOnSale(p);
+  const old = onSale ? `<s>${formatPrice(p.oldPrice)}</s>` : '';
+  const save = onSale ? `<em>${t('pdp_save', { amount: formatPrice(p.oldPrice - p.price) })}</em>` : '';
+  const salePct = onSale ? `<span class="sale-badge pdp__sale">-${discountPct(p)}%</span>` : '';
   const badge = p.badge ? `<span class="product-badge ${badgeClass(p.badge)}" style="position:static">${p.badge}</span>` : '';
   const dropIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3c3 3.6 6 6.7 6 10a6 6 0 0 1-12 0c0-3.3 3-6.4 6-10Z"/></svg>';
+
+  const checks = [t('pdp_check_steel'), t('pdp_check_casa'), t('pdp_check_250'), t('pdp_check_fast')];
 
   mount.innerHTML = `
     <div class="wrap">
       <div class="breadcrumb" data-reveal>
-        <a href="index.html">Accueil</a><span>/</span>
-        <a href="collections.html?cat=${p.category}">${CATEGORY_LABELS[p.category]}</a><span>/</span>
+        <a href="index.html">${t('pdp_home')}</a><span>/</span>
+        <a href="collections.html?cat=${p.category}">${catLabel(p.category)}</a><span>/</span>
         <span>${p.name}</span>
       </div>
       <div class="pdp__grid">
@@ -394,62 +572,53 @@ function renderProductPage() {
           <div class="gallery__main" id="galMain"><img src="${gallery[0]}" alt="${p.name} - ${p.material}" onerror="this.outerHTML=phSVG('${p.category}')"></div>
           ${gallery.length > 1 ? `<div class="gallery__thumbs">
             ${gallery.map((src,i)=>
-              `<div class="gallery__thumb ${i===0?'active':''}" data-src="${src}"><img src="${src}" alt="${p.name} - vue ${i+1}" loading="lazy"></div>`
+              `<div class="gallery__thumb ${i===0?'active':''}" data-src="${src}"><img src="${src}" alt="${p.name} - ${i+1}" loading="lazy"></div>`
             ).join('')}
           </div>` : ''}
         </div>
         <div class="pdp__info" data-reveal data-delay="1">
           ${badge ? `<div class="pdp__badges">${badge}</div>` : ''}
-          <div class="pdp__cat">${CATEGORY_LABELS[p.category]}</div>
+          <div class="pdp__cat">${catLabel(p.category)}</div>
           <h1 class="pdp__title">${p.name}</h1>
-          <div class="pdp__rating"><span class="stars">${stars}</span> ${p.rating} · <span class="pdp__reviews">Lire les avis</span></div>
-          <div class="pdp__price">${old}<span class="now">${formatPrice(p.price)}</span>${save}</div>
-          <div class="pdp__mat">${ICONS.shield} ${p.material}</div>
-          <p class="pdp__desc">${p.description}</p>
+          <div class="pdp__rating"><span class="stars">${stars}</span> ${p.rating} · <span class="pdp__reviews">${t('pdp_reviews')}</span></div>
+          <div class="pdp__price">${old}<span class="now ${onSale?'sale':''}">${formatPrice(p.price)}</span>${save}${salePct}</div>
+
+          <ul class="pdp__checks">
+            ${checks.map(c => `<li>${ICONS.check}<span>${c}</span></li>`).join('')}
+          </ul>
+
+          <p class="pdp__desc">${desc}</p>
 
           <div class="pdp__buy">
             <div class="pdp__buy-row">
-              <div class="qty" aria-label="Quantité">
-                <button id="qtyMinus" aria-label="Diminuer">−</button>
+              <div class="qty" aria-label="${t('pdp_qty')}">
+                <button id="qtyMinus" aria-label="${t('pdp_dec')}">−</button>
                 <span id="qtyVal">1</span>
-                <button id="qtyPlus" aria-label="Augmenter">+</button>
+                <button id="qtyPlus" aria-label="${t('pdp_inc')}">+</button>
               </div>
-              <button class="btn pdp__add" id="pdpAdd">Ajouter au panier</button>
+              <button class="btn pdp__add" id="pdpAdd">${t('pdp_add')}</button>
             </div>
-            <button class="btn btn--gold pdp__wa" id="pdpWa">${ICONS.wa} Commander sur WhatsApp</button>
+            <button class="btn btn--gold pdp__wa" id="pdpWa">${ICONS.wa} ${t('pdp_wa')}</button>
           </div>
 
           <div class="pdp__trust">
-            <div><span class="pdp__trust-ic">${ICONS.shield}</span><b>Acier inoxydable</b><span>Finition durable et élégante</span></div>
-            <div><span class="pdp__trust-ic">${ICONS.truck}</span><b>Livraison rapide</b><span>2–4 jours ouvrables</span></div>
-            <div><span class="pdp__trust-ic">${ICONS.refresh}</span><b>Retours faciles</b><span>Sous 14 jours</span></div>
+            <div><span class="pdp__trust-ic">${ICONS.shield}</span><b>${t('trust_steel')}</b><span>${t('pdp_check_casa')}</span></div>
+            <div><span class="pdp__trust-ic">${ICONS.truck}</span><b>${t('cart_shipping')}</b><span>${t('cart_eta_val')}</span></div>
+            <div><span class="pdp__trust-ic">${ICONS.wa}</span><b>${t('trust_cod')}</b><span>${t('trust_free_250')}</span></div>
           </div>
 
           <div class="pdp__care">
             <span class="pdp__care-ic">${dropIc}</span>
             <div>
-              <b>Conseil d'entretien</b>
-              <p>Pour préserver l'éclat de votre bijou, évitez le contact direct avec les parfums, les produits chimiques et l'humidité prolongée.</p>
+              <b>${t('pdp_care_title')}</b>
+              <p>${t('pdp_care_text')}</p>
             </div>
           </div>
 
           <div class="accordion" id="acc">
-            ${accItem('Description', `<p>${p.description}</p>`, true)}
-            ${accItem('Matière &amp; Entretien', `<ul>
-              <li>Fabriqué en acier inoxydable, avec une finition dorée durable.</li>
-              <li>Nettoyez délicatement avec un chiffon doux et sec pour raviver l'éclat.</li>
-              <li>Conservez à l'abri de l'humidité, des parfums et des produits chimiques.</li>
-              <li>Résistant à l'eau, anti-ternissement &amp; hypoallergénique, <em>si confirmé par la marque</em>.</li>
-            </ul>`)}
-            ${accItem('Livraison', `<ul>
-              <li>Livraison standard en 2 à 4 jours ouvrables.</li>
-              <li>Paiement à la livraison disponible dans certaines régions.</li>
-              <li>Chaque pièce est expédiée dans un écrin Belorya.</li>
-            </ul>`)}
-            ${accItem('Retours', `<ul>
-              <li>Retours sous 14 jours pour toute pièce non portée, dans son emballage d'origine.</li>
-              <li>Contactez-nous sur WhatsApp pour organiser un retour ou un échange.</li>
-            </ul>`)}
+            ${accItem(t('acc_description'), `<p>${desc}</p>`, true)}
+            ${accItem(t('acc_material'), t('acc_material_body'))}
+            ${accItem(t('acc_delivery'), t('acc_delivery_body'))}
           </div>
         </div>
       </div>
@@ -457,47 +626,42 @@ function renderProductPage() {
 
     <section class="pdp-related">
       <div class="wrap">
-        <div class="section-head center" data-reveal><span class="eyebrow center">La sélection</span>
-          <h2 class="section-title" style="font-size:clamp(1.7rem,3vw,2.4rem)">Vous aimerez <em>aussi</em></h2></div>
+        <div class="section-head center" data-reveal><span class="eyebrow center">${t('pdp_related_eyebrow')}</span>
+          <h2 class="section-title" style="font-size:clamp(1.7rem,3vw,2.4rem)">${t('pdp_related_title')}</h2></div>
         <div class="product-grid" id="related"></div>
       </div>
     </section>
 
     <div class="pdp-sticky" id="pdpSticky" aria-hidden="true">
       <div class="pdp-sticky__price">${formatPrice(p.price)}</div>
-      <button class="btn btn--gold" id="pdpWaSticky">${ICONS.wa} Commander sur WhatsApp</button>
+      <button class="btn btn--gold" id="pdpWaSticky">${ICONS.wa} ${t('pdp_wa')}</button>
     </div>`;
 
-  // gallery thumbs
   const main = document.getElementById('galMain');
-  mount.querySelectorAll('.gallery__thumb').forEach(t => t.addEventListener('click', () => {
+  mount.querySelectorAll('.gallery__thumb').forEach(th => th.addEventListener('click', () => {
     mount.querySelectorAll('.gallery__thumb').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    main.innerHTML = `<img src="${t.dataset.src}" alt="${p.name}">`;
+    th.classList.add('active');
+    main.innerHTML = `<img src="${th.dataset.src}" alt="${p.name}">`;
   }));
 
-  // qty
   let q = 1;
   const qv = document.getElementById('qtyVal');
   document.getElementById('qtyMinus').onclick = () => { q = Math.max(1, q-1); qv.textContent = q; };
   document.getElementById('qtyPlus').onclick = () => { q++; qv.textContent = q; };
   document.getElementById('pdpAdd').onclick = () => { addToCart(p.id, q); openCart(); };
   const waOrder = () => {
-    const msg = `Bonjour ${BRAND} 👋%0AJe suis intéressé(e) par : ${p.name} (${formatPrice(p.price)})%0AQuantité : ${q}`;
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, '_blank');
+    const msg = `${t('wa_hello')}%0A${t('wa_interested')} : ${p.name} (${formatPrice(p.price)})%0A${t('pdp_qty')} : ${q}`;
+    window.open(`${SOCIALS.whatsapp}?text=${msg}`, '_blank');
   };
   document.getElementById('pdpWa').onclick = waOrder;
   document.getElementById('pdpWaSticky').onclick = waOrder;
 
-  // accordion
   initAccordion();
 
-  // related
   const related = PRODUCTS.filter(x => x.category === p.category && x.id !== p.id)
     .concat(PRODUCTS.filter(x => x.category !== p.category && x.id !== p.id)).slice(0, 3);
   document.getElementById('related').innerHTML = related.map((x,i)=>productCard(x,(i%3)+1)).join('');
 
-  // reveal mobile sticky CTA once user scrolls past the main buy button
   const sticky = document.getElementById('pdpSticky');
   const buyBtn = document.getElementById('pdpWa');
   if (sticky && buyBtn && 'IntersectionObserver' in window) {
@@ -534,22 +698,22 @@ function initNewsletter() {
     e.preventDefault();
     const msg = form.querySelector('.form-msg');
     const email = form.querySelector('input').value.trim();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.textContent = 'Please enter a valid email address.'; msg.style.color = '#d98a6a'; return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.textContent = t('nl_invalid'); msg.style.color = '#d98a6a'; return; }
     msg.style.color = 'var(--gold-soft)';
-    msg.textContent = 'Welcome to the private list, check your inbox.';
+    msg.textContent = t('nl_ok');
     form.querySelector('input').value = '';
   });
 }
 
 /* ---------------- Boot ---------------- */
 document.addEventListener('DOMContentLoaded', () => {
+  applyStaticI18n();
   renderHeader();
+  renderTrustBar();
   renderFooter();
   renderBestSellers();
   renderCollectionsPage();
   renderProductPage();
   initNewsletter();
   initReveal();
-  // year stamps
-  document.querySelectorAll('[data-year]').forEach(e => e.textContent = '2026');
 });
