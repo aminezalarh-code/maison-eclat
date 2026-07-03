@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connexion — BELORYA Admin</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <div class="login-wrap">
+    <form class="login-card" id="loginForm">
+      <div class="login-card__brand"><b>BELORYA</b><span>Admin</span></div>
+      <h1>Connexion</h1>
+      <div class="field">
+        <label for="email">E-mail</label>
+        <input class="input" type="email" id="email" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="password">Mot de passe</label>
+        <input class="input" type="password" id="password" autocomplete="current-password" required />
+      </div>
+      <button class="btn btn--gold" type="submit" id="loginBtn" style="width:100%;justify-content:center">Se connecter</button>
+      <p class="login-msg" id="msg"></p>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="lib.js"></script>
+  <script>
+    (async () => {
+      if (!Admin.CONFIGURED) { Admin.renderNotConfigured(); return; }
+      const params = new URLSearchParams(location.search);
+      const msg = document.getElementById('msg');
+      if (params.get('denied')) { msg.className = 'login-msg bad'; msg.textContent = "Ce compte n'a pas les droits administrateur."; }
+      // already signed in? go to dashboard
+      if (await Admin.currentUser() && await Admin.isAdmin()) { location.replace('index.html'); return; }
+
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('loginBtn');
+        msg.className = 'login-msg'; msg.textContent = '';
+        btn.disabled = true; btn.textContent = 'Connexion…';
+        try {
+          await Admin.signIn(document.getElementById('email').value.trim(), document.getElementById('password').value);
+          if (!(await Admin.isAdmin())) { await Admin.db().auth.signOut(); throw new Error('not-admin'); }
+          location.replace('index.html');
+        } catch (err) {
+          msg.className = 'login-msg bad';
+          msg.textContent = err && err.message === 'not-admin'
+            ? "Ce compte n'a pas les droits administrateur."
+            : 'E-mail ou mot de passe incorrect.';
+          btn.disabled = false; btn.textContent = 'Se connecter';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

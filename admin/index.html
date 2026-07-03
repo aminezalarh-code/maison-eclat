@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tableau de bord — BELORYA Admin</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="lib.js"></script>
+  <script>
+    (async () => {
+      const user = await Admin.requireAdmin();
+      if (!user) return;
+      const LOW_STOCK = 5;
+
+      const content = Admin.mountShell('index.html', 'Tableau de bord',
+        `<a class="btn btn--gold" href="products.html">+ Nouveau produit</a>`,
+        `<div class="grid stats" id="stats"></div>
+         <div class="grid" style="grid-template-columns: 1.4fr 1fr; margin-top:18px" id="panels"></div>`);
+
+      const db = Admin.db();
+      const { money, esc } = Admin;
+
+      // ---- stat cards ----
+      const [products, orders, pending, promos, low] = await Promise.all([
+        Admin.count('products', [['status','neq','archived']]),
+        Admin.count('orders'),
+        Admin.count('orders', [['status','eq','pending']]),
+        Admin.count('promo_codes', [['active','is',true]]),
+        Admin.count('products', [['stock','lte',LOW_STOCK]])
+      ]);
+      const statCard = (label, value, sub, accent) =>
+        `<div class="stat ${accent ? 'stat--accent' : ''}"><div class="stat__label">${label}</div>
+         <div class="stat__value">${value}</div>${sub ? `<div class="stat__sub">${sub}</div>` : ''}</div>`;
+      document.getElementById('stats').innerHTML =
+        statCard('Produits', products, 'Total au catalogue') +
+        statCard('Commandes', orders, 'Toutes commandes') +
+        statCard('En attente', pending, 'À traiter', true) +
+        statCard('Codes promo actifs', promos) +
+        statCard('Stock faible', low, `≤ ${LOW_STOCK} en stock`);
+
+      // ---- recent orders + low stock / best sellers ----
+      const { data: recent } = await db.from('orders').select('*').order('created_at', { ascending: false }).limit(6);
+      const { data: lowProducts } = await db.from('products').select('name,stock,status').lte('stock', LOW_STOCK).neq('status','archived').order('stock').limit(6);
+      const { data: best } = await db.from('products').select('name,price,stock').eq('is_best_seller', true).limit(6);
+
+      const statusPill = (s) => {
+        const map = { pending:['warn','En attente'], confirmed:['gold','Confirmée'], shipped:['muted','Expédiée'], delivered:['ok','Livrée'], cancelled:['bad','Annulée'] };
+        const [k, l] = map[s] || ['muted', s]; return `<span class="pill pill--${k}"><span class="dot"></span>${l}</span>`;
+      };
+      const ordersRows = (recent && recent.length)
+        ? recent.map(o => `<tr>
+            <td class="tbl__name">#${o.id}</td>
+            <td>${esc(o.customer_name) || '<span class="muted">—</span>'}<div class="tbl__sub">${esc(o.phone) || ''}</div></td>
+            <td>${money(o.total)}</td>
+            <td>${statusPill(o.status)}</td></tr>`).join('')
+        : `<tr><td colspan="4"><div class="empty">Aucune commande pour le moment.</div></td></tr>`;
+
+      const lowRows = (lowProducts && lowProducts.length)
+        ? lowProducts.map(p => `<tr><td class="tbl__name">${esc(p.name)}</td>
+            <td class="right"><span class="pill pill--${p.stock <= 0 ? 'bad' : 'warn'}">${p.stock} en stock</span></td></tr>`).join('')
+        : `<tr><td colspan="2"><div class="empty">Aucune alerte de stock.</div></td></tr>`;
+
+      document.getElementById('panels').innerHTML = `
+        <div class="card">
+          <div class="card__head"><h3>Commandes récentes</h3><a class="btn btn--sm" href="orders.html">Voir tout</a></div>
+          <div class="card__body tbl-wrap"><table class="tbl">
+            <thead><tr><th>Commande</th><th>Client</th><th>Total</th><th>Statut</th></tr></thead>
+            <tbody>${ordersRows}</tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card__head"><h3>Stock faible</h3><a class="btn btn--sm" href="products.html">Produits</a></div>
+          <div class="card__body tbl-wrap"><table class="tbl">
+            <thead><tr><th>Produit</th><th class="right">Stock</th></tr></thead>
+            <tbody>${lowRows}</tbody></table></div>
+        </div>`;
+    })();
+  </script>
+</body>
+</html>
