@@ -133,16 +133,43 @@
       .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   }
 
+  /* Convert/compress a photo to web-friendly JPEG (max 1600px). Phone photos are often
+     huge (10 MB+) or in formats browsers can't display; this normalizes them. Falls back
+     to the original file for standard formats the browser can't re-encode. */
+  async function toWebJpeg(file, maxDim = 1600, quality = 0.85) {
+    try {
+      const bmp = await createImageBitmap(file);
+      const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+      const w = Math.max(1, Math.round(bmp.width * scale)), h = Math.max(1, Math.round(bmp.height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(bmp, 0, 0, w, h);
+      if (bmp.close) bmp.close();
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
+      if (!blob) return file;
+      const base = (file.name || 'image').replace(/\.[^.]+$/, '') || 'image';
+      return new File([blob], base + '.jpg', { type: 'image/jpeg' });
+    } catch (e) {
+      // Browser can't decode it. Standard formats can still be uploaded as-is;
+      // exotic ones (e.g. HEIC on some phones) would never display on the site.
+      if (/image\/(jpeg|jpg|png|webp|gif)/i.test(file.type)) return file;
+      throw new Error('Format d’image non pris en charge — utilisez JPEG ou PNG.');
+    }
+  }
+
   /* Upload an image File to the public "media" bucket, log it in media table, return its URL. */
   async function upload(file, kind) {
     const c = db(); if (!c) throw new Error('not-configured');
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    // logos/favicons keep their format (transparency); photos get normalized to JPEG
+    const f = (kind === 'logo') ? file : await toWebJpeg(file);
+    const ext = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
     const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const { error } = await c.storage.from('media').upload(path, file, { cacheControl: '3600', upsert: false });
+    const { error } = await c.storage.from('media').upload(path, f, { cacheControl: '3600', upsert: false, contentType: f.type || 'image/jpeg' });
     if (error) throw error;
     const { data } = c.storage.from('media').getPublicUrl(path);
     const url = data.publicUrl;
-    await c.from('media').insert({ url, path, kind: kind || 'product', alt: file.name });
+    const { error: mediaErr } = await c.from('media').insert({ url, path, kind: kind || 'product', alt: file.name });
+    if (mediaErr) throw mediaErr;
     return { url, path };
   }
 

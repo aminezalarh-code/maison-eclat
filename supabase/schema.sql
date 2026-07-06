@@ -292,6 +292,26 @@ insert into promo_codes (code, discount_type, discount_value, min_order, active)
   ('BELORYA10', 'percent', 10, 100, true)
 on conflict (code) do nothing;
 
+-- ============================================================
+-- STORAGE — access rules for the public "media" bucket
+-- (bucket itself is created in the Storage UI; these filters are
+--  safe to run before or after it exists)
+-- ============================================================
+drop policy if exists "media read" on storage.objects;
+create policy "media read" on storage.objects
+  for select using (bucket_id = 'media');
+drop policy if exists "media admin insert" on storage.objects;
+create policy "media admin insert" on storage.objects
+  for insert to authenticated with check (bucket_id = 'media' and public.is_admin());
+drop policy if exists "media admin update" on storage.objects;
+create policy "media admin update" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'media' and public.is_admin())
+  with check (bucket_id = 'media' and public.is_admin());
+drop policy if exists "media admin delete" on storage.objects;
+create policy "media admin delete" on storage.objects
+  for delete to authenticated using (bucket_id = 'media' and public.is_admin());
+
 insert into settings (key, value) values
   ('brand', '{"name":"Belorya","tagline":"Eternal Shine"}'),
   ('socials', '{"instagram":"https://www.instagram.com/belorya_/","facebook":"https://www.facebook.com/profile.php?id=61591102114678","tiktok":"https://www.tiktok.com/@belorya5","whatsapp":"212660323891","email":"belorya1@gmail.com"}'),

@@ -27,6 +27,8 @@ orders; only signed-in **admins** can manage data.
 1. Open **Storage → New bucket**.
 2. Name it exactly **`media`**, set it to **Public**, and create it.
    (Product/homepage images will be uploaded here from the admin.)
+3. The upload/delete access rules for this bucket are part of `schema.sql`
+   (the `storage.objects` policies) — no extra clicks needed if you ran it.
 
 ## 4. Create your admin login
 
