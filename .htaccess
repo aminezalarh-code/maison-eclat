@@ -1,0 +1,12 @@
+# BELORYA — cache policy (Hostinger/LiteSpeed honors .htaccess)
+# Code files: always revalidate so every deploy is visible immediately.
+# ETags make revalidation cheap (304 when unchanged).
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|js|css)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  # Media: cache for 30 days (heavy, rarely change)
+  <FilesMatch "\.(jpe?g|png|webp|gif|svg|ico|woff2?)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+</IfModule>

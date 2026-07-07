@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="admin.css?v=2" />
   <style>
     .media-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:18px; margin-top:20px; }
     .mediac { border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#fff; box-shadow: var(--shadow); transition: transform .3s ease, box-shadow .3s ease; animation: fadeUp .45s ease both; }
@@ -21,8 +21,8 @@
 </head>
 <body>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
-  <script src="lib.js"></script>
+  <script src="config.js?v=2"></script>
+  <script src="lib.js?v=2"></script>
   <script>
     (async () => {
       const user = await Admin.requireAdmin(); if (!user) return;
