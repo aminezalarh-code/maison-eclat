@@ -68,10 +68,11 @@ const NAV_LINKS = [
 /* Language switcher markup */
 function langSwitcher(extra = '') {
   const lang = getLang();
+  const opts = [['fr', 'FR'], ['en', 'EN'], ['ar', 'ع']];
   return `<div class="lang-switch ${extra}" role="group" aria-label="Language">
-    <button class="lang-opt ${lang==='fr'?'active':''}" data-lang="fr">FR</button>
-    <span class="lang-sep">/</span>
-    <button class="lang-opt ${lang==='en'?'active':''}" data-lang="en">EN</button>
+    ${opts.map(([code, label], i) =>
+      `${i ? '<span class="lang-sep">/</span>' : ''}<button class="lang-opt ${lang===code?'active':''}" data-lang="${code}">${label}</button>`
+    ).join('')}
   </div>`;
 }
 function bindLangSwitch(root = document) {
@@ -265,21 +266,25 @@ function setPromo(v) { if (v) localStorage.setItem(PROMO_KEY, v); else localStor
 function getZone() { return localStorage.getItem(ZONE_KEY) === 'outside' ? 'outside' : 'casablanca'; }
 function setZone(z) { localStorage.setItem(ZONE_KEY, z === 'outside' ? 'outside' : 'casablanca'); }
 
-function addToCart(id, qty = 1) {
+/* A cart line is identified by product id + chosen variant (colour). */
+function lineKey(i) { return i.id + '|' + (i.variant || ''); }
+function addToCart(id, qty = 1, variant = null) {
   const p = PRODUCTS.find(x => x.id === id);
   if (!p) return;
+  const v = variant || null;
   const cart = getCart();
-  const found = cart.find(i => i.id === id);
-  if (found) found.qty += qty; else cart.push({ id, qty });
+  const found = cart.find(i => i.id === id && (i.variant || null) === v);
+  if (found) found.qty += qty; else cart.push({ id, qty, variant: v });
   saveCart(cart);
   renderCart();
   renderCartPage();
-  toast(t('cart_added', { name: p.name }));
+  toast(t('cart_added', { name: p.name + (v ? ' · ' + v : '') }));
 }
-function setQty(id, qty) {
+/* setQty operates on a line key ("id|variant"); qty<=0 removes the line. */
+function setQty(key, qty) {
   let cart = getCart();
-  if (qty <= 0) cart = cart.filter(i => i.id !== id);
-  else { const it = cart.find(i => i.id === id); if (it) it.qty = qty; }
+  if (qty <= 0) cart = cart.filter(i => lineKey(i) !== key);
+  else { const it = cart.find(i => lineKey(i) === key); if (it) it.qty = qty; }
   saveCart(cart); renderCart(); renderCartPage();
 }
 function cartSubtotal() {
@@ -348,20 +353,21 @@ function renderCart() {
   }
   body.innerHTML = cart.map(i => {
     const p = PRODUCTS.find(x => x.id === i.id); if (!p) return '';
+    const k = lineKey(i);
     return `<div class="cart-item">
       <a class="cart-item__media" href="product.html?id=${p.id}">${productMedia(p)}</a>
       <div>
         <a href="product.html?id=${p.id}" class="cart-item__name">${p.name}</a>
-        <div class="cart-item__mat">${p.material}</div>
+        <div class="cart-item__mat">${p.material}${i.variant ? ` · <span class="cart-item__variant">${i.variant}</span>` : ''}</div>
         <div class="qty">
-          <button onclick="setQty('${p.id}',${i.qty-1})" aria-label="${t('pdp_dec')}">−</button>
+          <button onclick="setQty('${k}',${i.qty-1})" aria-label="${t('pdp_dec')}">−</button>
           <span>${i.qty}</span>
-          <button onclick="setQty('${p.id}',${i.qty+1})" aria-label="${t('pdp_inc')}">+</button>
+          <button onclick="setQty('${k}',${i.qty+1})" aria-label="${t('pdp_inc')}">+</button>
         </div>
       </div>
       <div class="cart-item__right">
         <div class="cart-item__price">${formatPrice(p.price * i.qty)}</div>
-        <button class="cart-item__remove" onclick="setQty('${p.id}',0)">${t('cart_remove')}</button>
+        <button class="cart-item__remove" onclick="setQty('${k}',0)">${t('cart_remove')}</button>
       </div>
     </div>`;
   }).join('');
@@ -396,18 +402,19 @@ function renderCartPage() {
       <div class="cart-page__items">
         ${cart.map(i => {
           const p = PRODUCTS.find(x => x.id === i.id); if (!p) return '';
+          const k = lineKey(i);
           return `<div class="cart-line">
             <a class="cart-line__media" href="product.html?id=${p.id}">${productMedia(p)}</a>
             <div class="cart-line__info">
               <a href="product.html?id=${p.id}" class="cart-line__name">${p.name}</a>
-              <div class="cart-line__mat">${p.material}</div>
+              <div class="cart-line__mat">${p.material}${i.variant ? ` · <span class="cart-item__variant">${i.variant}</span>` : ''}</div>
               <div class="cart-line__controls">
                 <div class="qty">
-                  <button onclick="setQty('${p.id}',${i.qty-1})" aria-label="${t('pdp_dec')}">−</button>
+                  <button onclick="setQty('${k}',${i.qty-1})" aria-label="${t('pdp_dec')}">−</button>
                   <span>${i.qty}</span>
-                  <button onclick="setQty('${p.id}',${i.qty+1})" aria-label="${t('pdp_inc')}">+</button>
+                  <button onclick="setQty('${k}',${i.qty+1})" aria-label="${t('pdp_inc')}">+</button>
                 </div>
-                <button class="cart-item__remove" onclick="setQty('${p.id}',0)">${t('cart_remove')}</button>
+                <button class="cart-item__remove" onclick="setQty('${k}',0)">${t('cart_remove')}</button>
               </div>
             </div>
             <div class="cart-line__price">${formatPrice(p.price * i.qty)}</div>
@@ -474,7 +481,7 @@ function waOrderCart() {
   const T = computeTotals();
   const NL = '%0A';
   let msg = `${t('wa_hello')}${NL}${NL}${t('wa_want')}${NL}`;
-  cart.forEach(i => { const p = PRODUCTS.find(x => x.id === i.id); if (p) msg += `• ${p.name} ×${i.qty}${NL}`; });
+  cart.forEach(i => { const p = PRODUCTS.find(x => x.id === i.id); if (p) msg += `• ${p.name}${i.variant ? ' (' + i.variant + ')' : ''} ×${i.qty}${NL}`; });
   msg += `${NL}${t('wa_subtotal')} : ${formatPrice(T.subtotal)}${NL}`;
   if (T.promo && T.discount > 0) msg += `${t('wa_promo')} : ${T.promo}${NL}${t('wa_discount')} : −${formatPrice(T.discount)}${NL}`;
   msg += `${t('wa_shipping')} : ${T.zone === 'outside' ? t('cart_zone_out') : t('cart_zone_casa')}${NL}`;
@@ -486,7 +493,7 @@ function waOrderCart() {
   if (window.Store && Store.saveOrder) {
     const order = { subtotal: T.subtotal, discount: T.discount, shipping: T.shipping, total: T.total,
       promo_code: T.discount > 0 ? T.promo : null, shipping_zone: T.zone, status: 'pending' };
-    const items = cart.map(i => { const p = PRODUCTS.find(x => x.id === i.id); return { product_name: p ? p.name : i.id, qty: i.qty, unit_price: p ? p.price : 0 }; });
+    const items = cart.map(i => { const p = PRODUCTS.find(x => x.id === i.id); return { product_name: p ? p.name : i.id, variant: i.variant || null, qty: i.qty, unit_price: p ? p.price : 0 }; });
     Store.saveOrder(order, items);
   }
 
@@ -519,6 +526,25 @@ function badgeClass(b) { return b === 'New' ? 'new' : b === 'Limited' ? 'limited
 function discountPct(p) { return p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0; }
 function isOnSale(p) { return !!p.oldPrice && p.oldPrice > p.price; }
 function isSoldOut(p) { return (p.stock != null && p.stock <= 0) || p.status === 'out_of_stock'; }
+
+/* Map a colour name (FR/EN/AR) to a swatch background for the product page. */
+function colorHex(name) {
+  const n = (name || '').toString().toLowerCase();
+  const map = [
+    [/(dor|gold|ذهب)/, 'linear-gradient(135deg,#e6cd86,#c0a062)'],
+    [/(or rose|rose gold|rose-gold|روز)/, 'linear-gradient(135deg,#e7c2ad,#d99e86)'],
+    [/(argent|silver|فض)/, 'linear-gradient(135deg,#e8e8ea,#b9bbbf)'],
+    [/(blanc|white|nacr|pearl|أبيض|صدف)/, 'linear-gradient(135deg,#fbf7ef,#e7ddca)'],
+    [/(rose|pink|وردي)/, '#e7b7c4'],
+    [/(mauve|lilac|موف|بنفسج)/, '#b39ddb'],
+    [/(vert|green|emerald|أخضر|زمرد)/, '#5b8b6b'],
+    [/(bleu|blue|أزرق)/, '#7d9cc0'],
+    [/(noir|black|أسود)/, '#2b2b2b'],
+    [/(ivoire|ivory|عاج)/, 'linear-gradient(135deg,#f5efe2,#e3d7bf)']
+  ];
+  for (const [re, val] of map) if (re.test(n)) return val;
+  return 'linear-gradient(135deg,#e6cd86,#c0a062)';
+}
 
 function productCard(p, delay = 0) {
   const badge = p.badge ? `<span class="product-badge ${badgeClass(p.badge)}">${p.badge}</span>` : '';
@@ -600,7 +626,8 @@ function renderCollectionsPage() {
     else if (sort === 'best') list = list.filter(p=>p.badge==='Best Seller').concat(list.filter(p=>p.badge!=='Best Seller'));
     mount.innerHTML = list.map((p,i)=>productCard(p,(i%3)+1)).join('') || `<p style="color:var(--muted);padding:3rem 0">${t('empty_cat')}</p>`;
     const n = list.length;
-    document.getElementById('resultsCount').textContent = `${n} ${t('result_word')}${n!==1?'s':''}`;
+    const plural = getLang() === 'ar' ? '' : (n !== 1 ? 's' : '');
+    document.getElementById('resultsCount').textContent = `${n} ${t('result_word')}${plural}`;
     initReveal();
     const url = new URL(location); url.searchParams.set('cat',filter); url.searchParams.set('sort',sort); history.replaceState(null,'',url);
   }
@@ -659,6 +686,14 @@ function renderProductPage() {
           <div class="pdp__rating"><span class="stars">${stars}</span> ${p.rating} · <span class="pdp__reviews">${t('pdp_reviews')}</span></div>
           <div class="pdp__price">${old}<span class="now ${onSale?'sale':''}">${formatPrice(p.price)}</span>${save}${salePct}</div>
 
+          ${(p.variants && p.variants.length) ? `
+          <div class="pdp__variants">
+            <div class="pdp__variants-label">${t('pdp_color')} : <span id="variantName">${p.variants[0].name}</span></div>
+            <div class="pdp__swatches" id="swatches">
+              ${p.variants.map((v, i) => `<button type="button" class="swatch ${i===0?'active':''}" data-variant="${v.name}" aria-label="${v.name}" title="${v.name}" style="background:${colorHex(v.color || v.name)}"></button>`).join('')}
+            </div>
+          </div>` : ''}
+
           <ul class="pdp__checks">
             ${checks.map(c => `<li>${ICONS.check}<span>${c}</span></li>`).join('')}
           </ul>
@@ -713,20 +748,47 @@ function renderProductPage() {
       <button class="btn btn--gold" id="pdpWaSticky">${ICONS.wa} ${t('pdp_wa')}</button>
     </div>`;
 
+  // ---- gallery: thumbnails + finger swipe ----
   const main = document.getElementById('galMain');
-  mount.querySelectorAll('.gallery__thumb').forEach(th => th.addEventListener('click', () => {
-    mount.querySelectorAll('.gallery__thumb').forEach(x=>x.classList.remove('active'));
-    th.classList.add('active');
-    main.innerHTML = `<img src="${th.dataset.src}" alt="${p.name}">`;
+  let galIndex = 0;
+  function showImage(i) {
+    galIndex = (i + gallery.length) % gallery.length;
+    main.innerHTML = `<img src="${gallery[galIndex]}" alt="${p.name}">`;
+    mount.querySelectorAll('.gallery__thumb').forEach((x, j) => x.classList.toggle('active', j === galIndex));
+  }
+  mount.querySelectorAll('.gallery__thumb').forEach((th, i) => th.addEventListener('click', () => showImage(i)));
+  if (gallery.length > 1) {
+    let sx = 0, sy = 0, tracking = false;
+    main.addEventListener('touchstart', e => { const t0 = e.changedTouches[0]; sx = t0.clientX; sy = t0.clientY; tracking = true; }, { passive: true });
+    main.addEventListener('touchend', e => {
+      if (!tracking) return; tracking = false;
+      const t1 = e.changedTouches[0], dx = t1.clientX - sx, dy = t1.clientY - sy;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+        // in RTL the visual direction is mirrored
+        const dir = isRTL() ? -1 : 1;
+        showImage(galIndex + (dx < 0 ? dir : -dir));
+      }
+    }, { passive: true });
+  }
+
+  // ---- colour variants ----
+  let selectedVariant = (p.variants && p.variants.length) ? p.variants[0].name : null;
+  const vName = document.getElementById('variantName');
+  mount.querySelectorAll('.swatch').forEach(sw => sw.addEventListener('click', () => {
+    mount.querySelectorAll('.swatch').forEach(x => x.classList.remove('active'));
+    sw.classList.add('active');
+    selectedVariant = sw.dataset.variant;
+    if (vName) vName.textContent = selectedVariant;
   }));
 
   let q = 1;
   const qv = document.getElementById('qtyVal');
   document.getElementById('qtyMinus').onclick = () => { q = Math.max(1, q-1); qv.textContent = q; };
   document.getElementById('qtyPlus').onclick = () => { q++; qv.textContent = q; };
-  document.getElementById('pdpAdd').onclick = () => { addToCart(p.id, q); openCart(); };
+  document.getElementById('pdpAdd').onclick = () => { addToCart(p.id, q, selectedVariant); openCart(); };
   const waOrder = () => {
-    const msg = `${t('wa_hello')}%0A${t('wa_interested')} : ${p.name} (${formatPrice(p.price)})%0A${t('pdp_qty')} : ${q}`;
+    const colour = selectedVariant ? `%0A${t('pdp_color')} : ${selectedVariant}` : '';
+    const msg = `${t('wa_hello')}%0A${t('wa_interested')} : ${p.name} (${formatPrice(p.price)})${colour}%0A${t('pdp_qty')} : ${q}`;
     window.open(`${SOCIALS.whatsapp}?text=${msg}`, '_blank');
   };
   document.getElementById('pdpWa').onclick = waOrder;

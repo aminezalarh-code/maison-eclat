@@ -1091,3 +1091,33 @@ body.menu-open .mobile-menu a { animation: menuIn .6s var(--ease) forwards; }
   .cart-line { grid-template-columns: 84px 1fr; gap: 1rem; }
   .cart-line__price { grid-column: 2; justify-self: start; margin-top: 0.3rem; }
 }
+
+/* ============================================================
+   Product colour variants (PDP) + cart variant chip
+   ============================================================ */
+.pdp__variants { margin-top: 1.4rem; }
+.pdp__variants-label { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.6rem; letter-spacing: 0.02em; }
+.pdp__variants-label span { color: var(--ivory); font-weight: 600; }
+.pdp__swatches { display: flex; gap: 0.65rem; flex-wrap: wrap; }
+.swatch {
+  width: 34px; height: 34px; border-radius: 50%; padding: 0; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.14);
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+.swatch:hover { transform: translateY(-1px); }
+.swatch.active { box-shadow: 0 0 0 2px var(--black), 0 0 0 3px var(--gold); }
+.cart-item__variant { color: var(--gold-soft); font-style: normal; }
+
+/* ============================================================
+   RTL — Arabic
+   ============================================================ */
+[dir="rtl"] body { letter-spacing: 0; }
+[dir="rtl"] .eyebrow::before { background: linear-gradient(270deg, transparent, var(--gold)); }
+[dir="rtl"] .eyebrow.center::after { background: linear-gradient(270deg, var(--gold), transparent); }
+[dir="rtl"] .pdp__price .now { direction: ltr; }
+[dir="rtl"] .product-card__price, [dir="rtl"] .cart-item__price, [dir="rtl"] .cart-line__price,
+[dir="rtl"] .pdp-sticky__price, [dir="rtl"] .stat__value { direction: ltr; unicode-bidi: isolate; }
+[dir="rtl"] .lang-switch { direction: ltr; }
+[dir="rtl"] .breadcrumb { flex-direction: row-reverse; }
+[dir="rtl"] .link-arrow svg { transform: scaleX(-1); }
+[dir="rtl"] .announce__copy svg, [dir="rtl"] .btn svg, [dir="rtl"] .pdp__checks svg { flex: none; }

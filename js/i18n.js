@@ -5,12 +5,15 @@
    ============================================================ */
 
 const LANG_KEY = 'belorya_lang';
+const LANGS = ['fr', 'en', 'ar'];
+const RTL_LANGS = ['ar'];
 function getLang() {
   const l = localStorage.getItem(LANG_KEY);
-  return l === 'en' ? 'en' : 'fr';
+  return LANGS.includes(l) ? l : 'fr';
 }
+function isRTL() { return RTL_LANGS.includes(getLang()); }
 function setLang(lang) {
-  localStorage.setItem(LANG_KEY, lang === 'en' ? 'en' : 'fr');
+  localStorage.setItem(LANG_KEY, LANGS.includes(lang) ? lang : 'fr');
   // full reload keeps every rendered surface perfectly in sync, no mixed languages
   location.reload();
 }
@@ -34,16 +37,38 @@ const PRODUCT_EN = {
   'eclora': { description: "Where the delicacy of ivory meets the nobility of gold. A timeless creation that brings a touch of natural light to every silhouette.", short: "Petal earrings in ivory and gold." },
   'loceane': { description: "Like a seashell gently laid upon the sand, L'Océane captures the beauty of the sea and the sparkle of the sun. A creation for those who carry a breath of ocean wherever they go.", short: "Golden seashell earrings, a breath of the sea." }
 };
+/* Arabic translations of product copy (names stay as-is) */
+const PRODUCT_AR = {
+  'reflet-lunaire': { description: "مستوحاةٌ من التضاريس الطبيعية التي نحتها الزمن، تلاعب هذه الطقم الضوءَ بفضل انحناءاتها العضوية ولمستها المرآتية. يكشف تصميمها النحتي عن بريقٍ عميقٍ مع كل حركة، ليمنحكِ إطلالةً عصريةً أنيقةً خالدة.", short: "طقمٌ نحتيٌّ بلمسةٍ مرآتية." },
+  'petales-damour': { description: "كزهرةٍ داعبها الضوء، يكشف Pétales d'Amour عن كامل رقّة الأنوثة. تنسج بتلاتُه بألوانها الناعمة لعبةَ ضوءٍ أنيقة، وتضفي لمسةً من الشِّعر على كل إطلالاتكِ. إبداعٌ صُمِّم ليعبر الزمن بأناقةٍ ورشاقة.", short: "طقمٌ زهريٌّ، رقيقٌ وشاعريّ." },
+  'lheritiere': { description: "أكثر من مجرّد حُلية، فإن L'Héritière رمز. تستحضر التقاليد الثمينة، والذكريات المتوارثة، والجمال الذي يعبر الأجيال، مُتوَّجةً بلمسةٍ معاصرة.", short: "طقمُ إرثٍ برُقيٍّ معاصر." },
+  'etoile-dor': { description: "وُلِدت من وحي أعماق البحار، فيحتفي هذا الإبداع بجمال المحيط النادر. نجمُ بحرها المنحوت بعنايةٍ يُجسِّد الرشاقةَ والصفاءَ ونورَ الآفاق اللامتناهية.", short: "أقراطٌ على شكل نجمة بحر ببريقٍ ذهبي." },
+  'cygne-daurore': { description: "بين الضوء والرقّة، يلتقط Cygne d'Aurore اللحظةَ التي تلامس فيها أولى الأشعّة صفحةَ الماء الساكن. حُليةٌ راقيةٌ تُزيِّن كل إطلالة.", short: "قلادةُ بجعةٍ مُرصَّعة، راقيةٌ ومُشرقة." },
+  'lien-damour': { description: "قلبٌ بخطوطٍ متشابكة، رمزُ رباطٍ فريدٍ لا ينفصم أبدًا. Lien d'Amour إبداعٌ رقيق، لتحملي قريبًا منكِ أغلى ما يهمّكِ.", short: "طقمُ قلبٍ متشابك، رمزٌ لرباطٍ فريد." },
+  'laureole': { description: "يحتفي L'Auréole بجمال التفاصيل وبريق اللحظات الثمينة. إبداعٌ راقٍ تتّحد فيه النعومةُ والأناقة في كيانٍ واحد.", short: "طقمٌ مُطوَّقٌ بالبريق، ناعمٌ وأنيق." },
+  'linsaisissable': { description: "يُجسِّد L'Insaisissable رشاقةَ ما لا يُمكن الإمساكُ به. مستوحًى من خفّة الفراشة، يرافق هذا الإبداعُ المُشرق كلَّ حركاتكِ برهافةٍ ورُقيّ.", short: "طقمُ فراشةٍ، خفيفٌ ومُشرق." },
+  'lincontournable': { description: "L'Incontournable هي تلك الحُلية التي تختارينها دون تردّد، يومًا بعد يوم. تلتقط زخارفها الرقيقة، المتوفّرة باللون الأبيض الصدفي أو الوردي الرقيق، الضوءَ بنعومة، وتضفي لمسةً من الرشاقة على كل لحظة.", short: "قلادةٌ بزخارف صدفية، تُلبَس كل يوم." },
+  'lenvolee': { description: "يستحضر L'Envolée خفّةَ فراشةٍ يحملها النسيم. إبداعٌ مُشرق صُمِّم للواتي يمضين بثقةٍ وحرّية.", short: "قلادةٌ مُفرَّغة، خفيفةٌ كالتحليق." },
+  'a-coeur-ouvert': { description: "ثلاثةُ قلوب، وعاطفةٌ واحدة. يُجسِّد À Cœur Ouvert قوّةَ المشاعر الصادقة وجمال حبٍّ مُعلَن. إبداعٌ راقٍ، يُلبَس كإعلانٍ للحنان.", short: "قلادةُ لاريا بثلاثة قلوب، صادقةٌ وراقية." },
+  'emeraude': { description: "كنزهةٍ في قلب حديقةٍ يغمرها الضوء، يحتفي Émeraude بعذوبة الطبيعة. يبدو كلُّ حجرٍ وكأنه يلتقط شذرةً من الخُضرة، مُحوِّلًا البساطةَ إلى أناقةٍ خالدة.", short: "طقمٌ بأحجارٍ خضراء، مستوحًى من الطبيعة." },
+  'rosalia': { description: "كفراشةٍ في أول الربيع، تحتفي هذه الحُلية بالعذوبة والحرّية وجمال البدايات الجديدة. لمسةٌ رقيقة تُلبَس كل يوم.", short: "أقراطُ فراشةٍ وردية، عذبةٌ وربيعية." },
+  'premier-regard': { description: "أحيانًا تكفي نظرةٌ واحدة ليتبدّل كلُّ شيء. يستحضر قلبُها الحلزوني دوّامةَ المشاعر الأولى، بينما ترمز أشعّتها الذهبية إلى نور لقاءٍ يُضيء اللحظة.", short: "أقراطُ شمسٍ حلزونية ببريقٍ ذهبي." },
+  'eclora': { description: "لقاءٌ بين رقّة العاج ونُبل الذهب. إبداعٌ خالدٌ يضفي لمسةً من النور الطبيعي على كل الإطلالات.", short: "أقراطُ بتلاتٍ بلونَي العاج والذهب." },
+  'loceane': { description: "كصدفةٍ وُضِعت برفقٍ على الرمل، يلتقط L'Océane جمالَ البحر وبريقَ الشمس. إبداعٌ صُمِّم للواتي يحملن نسمةَ محيطٍ أينما ذهبن.", short: "أقراطُ صدفةٍ ذهبية، نسمةٌ بحرية." }
+};
+const PRODUCT_I18N = { en: PRODUCT_EN, ar: PRODUCT_AR };
 function pField(p, field) {
   const lang = getLang();
-  if (lang === 'en' && PRODUCT_EN[p.id] && PRODUCT_EN[p.id][field]) return PRODUCT_EN[p.id][field];
+  const dict = PRODUCT_I18N[lang];
+  if (dict && dict[p.id] && dict[p.id][field]) return dict[p.id][field];
   return p[field];
 }
 
 /* Category labels per language */
 const CAT_LABELS = {
   fr: { necklaces: 'Colliers', sets: 'Parures', earrings: "Boucles d'oreilles" },
-  en: { necklaces: 'Necklaces', sets: 'Sets', earrings: 'Earrings' }
+  en: { necklaces: 'Necklaces', sets: 'Sets', earrings: 'Earrings' },
+  ar: { necklaces: 'عقود', sets: 'أطقم', earrings: 'أقراط' }
 };
 function catLabel(cat) { return (CAT_LABELS[getLang()] || CAT_LABELS.fr)[cat] || cat; }
 
@@ -88,7 +113,7 @@ const UI = {
     pdp_home: 'Accueil', pdp_reviews: 'Lire les avis',
     pdp_add: 'Ajouter au panier', pdp_wa: 'Commander sur WhatsApp',
     pdp_save: 'Économisez {amount}',
-    pdp_qty: 'Quantité', pdp_dec: 'Diminuer', pdp_inc: 'Augmenter',
+    pdp_qty: 'Quantité', pdp_dec: 'Diminuer', pdp_inc: 'Augmenter', pdp_color: 'Couleur',
     pdp_check_steel: 'Acier inoxydable',
     pdp_check_casa: 'Livraison gratuite à Casablanca',
     pdp_check_250: 'Livraison offerte dès 250 MAD',
@@ -185,6 +210,7 @@ const UI = {
     cart_remove: 'Remove', cart_added: '{name} added to your bag',
     cart_checkout_demo: 'Ordering is via WhatsApp — tap “Order on WhatsApp”.',
     card_add: 'Add — {price}', card_view: 'View product', sold_out: 'Sold out',
+    pdp_color: 'Color',
     pdp_home: 'Home', pdp_reviews: 'Read reviews',
     pdp_add: 'Add to bag', pdp_wa: 'Order on WhatsApp',
     pdp_save: 'Save {amount}',
@@ -246,6 +272,98 @@ const UI = {
     wa_shipping: 'Delivery', wa_shipping_fee: 'Delivery fee', wa_total: 'Total',
     wa_free: 'Free', wa_name: 'Name', wa_phone: 'Phone', wa_address: 'Address', wa_thanks: 'Thank you.',
     wa_interested: "I'm interested in"
+  },
+  ar: {
+    nav_home: 'الرئيسية', nav_collections: 'المجموعة', nav_best: 'الأكثر مبيعًا',
+    nav_about: 'من نحن', nav_contact: 'تواصل', nav_whatsapp: 'واتساب',
+    lang_name: 'العربية',
+    announce_text: '🎉 عرض إطلاق BELORYA! استفيدي من خصم -10% بالرمز {code} احتفاءً بإطلاق علامتنا.',
+    announce_short: '🎉 -10% · {code}',
+    announce_copy: 'نسخ الرمز', announce_copied: 'تم نسخ الرمز!',
+    trust_free_casa: 'توصيل مجاني في الدار البيضاء',
+    trust_free_250: 'توصيل مجاني ابتداءً من 250 درهم',
+    trust_cod: 'الدفع عند الاستلام',
+    trust_steel: 'فولاذ مقاوم للصدأ',
+    ship_casa_free: 'توصيل مجاني في الدار البيضاء',
+    ship_maroc_250: 'توصيل مجاني في كل المغرب ابتداءً من 250 درهم',
+    cart_title: 'سلتك', cart_empty: 'سلتك فارغة',
+    cart_explore: 'اكتشفي المجموعة',
+    cart_subtotal: 'المجموع الفرعي', cart_discount: 'الخصم', cart_shipping: 'التوصيل',
+    cart_total: 'الإجمالي', cart_free: 'مجاني',
+    cart_checkout: 'اطلبي الآن', cart_wa: 'اطلبي عبر واتساب',
+    cart_view: 'عرض سلتي', cart_continue: 'متابعة التسوق',
+    cart_page_title: '<em>سلتي</em>', cart_summary_title: 'ملخص الطلب',
+    cart_empty_page: 'سلتك فارغة حاليًا.',
+    cart_promo_label: 'رمز الخصم', cart_promo_ph: 'BELORYA10', cart_promo_apply: 'تطبيق',
+    cart_promo_ok: 'تم تطبيق رمز الخصم', cart_promo_bad: 'رمز الخصم غير صالح.',
+    cart_promo_min: 'يُطبَّق هذا الرمز ابتداءً من {min} من الشراء.',
+    cart_zone_label: 'منطقة التوصيل', cart_zone_casa: 'الدار البيضاء', cart_zone_out: 'خارج الدار البيضاء',
+    cart_eta_label: 'مدة التوصيل المتوقعة', cart_eta_val: '2–4 أيام عمل',
+    cart_remove: 'إزالة', cart_added: 'تمت إضافة {name} إلى سلتك',
+    cart_checkout_demo: 'الطلب عبر واتساب — اضغطي «اطلبي عبر واتساب».',
+    card_add: 'أضيفي — {price}', card_view: 'عرض المنتج', sold_out: 'نفدت الكمية',
+    pdp_color: 'اللون',
+    pdp_home: 'الرئيسية', pdp_reviews: 'اقرئي التقييمات',
+    pdp_add: 'أضيفي إلى السلة', pdp_wa: 'اطلبي عبر واتساب',
+    pdp_save: 'وفّري {amount}',
+    pdp_qty: 'الكمية', pdp_dec: 'إنقاص', pdp_inc: 'زيادة',
+    pdp_check_steel: 'فولاذ مقاوم للصدأ',
+    pdp_check_casa: 'توصيل مجاني في الدار البيضاء',
+    pdp_check_250: 'توصيل مجاني ابتداءً من 250 درهم',
+    pdp_check_fast: 'توصيل سريع في 2–4 أيام عمل',
+    pdp_care_title: 'نصيحة العناية',
+    pdp_care_text: 'للحفاظ على بريق مجوهراتك، تجنّبي ملامستها المباشرة للعطور والمواد الكيميائية والرطوبة المطوّلة.',
+    pdp_related_eyebrow: 'مختارات', pdp_related_title: 'قد يعجبك <em>أيضًا</em>',
+    acc_description: 'الوصف', acc_material: 'الخامة والعناية', acc_delivery: 'التوصيل',
+    acc_material_body: '<ul><li>مصنوع من الفولاذ المقاوم للصدأ بلمسة ذهبية متينة.</li><li>نظّفيه برفق بقطعة قماش ناعمة وجافة لاستعادة بريقه.</li><li>احفظيه بعيدًا عن الرطوبة والعطور والمواد الكيميائية.</li><li>مقاوم للماء، مضاد للاصفرار، ولا يسبّب الحساسية.</li></ul>',
+    acc_delivery_body: '<ul><li>توصيل مجاني في الدار البيضاء.</li><li>توصيل مجاني في كل المغرب ابتداءً من 250 درهم.</li><li>توصيل عادي في 2 إلى 4 أيام عمل.</li><li>الدفع عند الاستلام متاح.</li></ul>',
+    footer_desc: 'مجوهرات من الفولاذ المقاوم للصدأ، مصمَّمة في الورشة لتُلبَس كل يوم. فخامة في المتناول، صُنعت لتدوم.',
+    footer_collections: 'المجموعة', footer_maison: 'الدار', footer_contact: 'تواصل',
+    footer_l_necklaces: 'عقود', footer_l_sets: 'أطقم', footer_l_earrings: 'أقراط',
+    footer_l_best: 'الأكثر مبيعًا', footer_l_new: 'وصل حديثًا', footer_l_promo: 'العروض',
+    footer_l_story: 'قصتنا', footer_l_materials: 'خاماتنا', footer_l_private: 'القائمة الخاصة',
+    footer_city: 'الدار البيضاء، المغرب', footer_hours: 'الإثنين–السبت · 10:00–19:00',
+    footer_rights: 'جميع الحقوق محفوظة.', footer_privacy: 'الخصوصية', footer_terms: 'الشروط',
+    nl_eyebrow: 'أعضاء مميّزون', nl_title: 'انضمّي إلى <em>القائمة الخاصة</em>',
+    nl_sub: 'احصلي على وصول مبكر للقطع الجديدة والإصدارات المحدودة والعروض الحصرية.',
+    nl_ph: 'عنوان بريدك الإلكتروني', nl_subscribe: 'اشتراك',
+    nl_invalid: 'يرجى إدخال عنوان بريد إلكتروني صالح.',
+    nl_ok: 'مرحبًا بك في القائمة الخاصة، تحقّقي من بريدك.',
+    nl_note: 'بلا إزعاج — فقط القطع الجديدة والعروض الخاصة. يمكنك إلغاء الاشتراك في أي وقت.',
+    hero_eyebrow: 'BELORYA · بريقٌ خالد',
+    hero_title: 'مجوهرات من الفولاذ<br><em>المقاوم للصدأ</em>',
+    hero_sub: 'قطعٌ راقية، مصمَّمة لأناقة يومك وبريقك ومتانتها.',
+    hero_cta1: 'اكتشفي المجموعة', hero_cta2: 'الأكثر مبيعًا',
+    hero_m1_b: '316L', hero_m1_s: 'فولاذ جراحي',
+    hero_m2_b: 'الدفع', hero_m2_s: 'عند الاستلام',
+    hero_m3_b: '2–4 أيام', hero_m3_s: 'توصيل سريع',
+    feat_eyebrow: 'الدار', feat_title: '<em>مجموعاتنا</em>',
+    feat_sub: 'صُمِّمت لتتألّق. وصُنعت لتدوم.',
+    col_view: 'عرض المجموعة',
+    col1_index: '01 — عقود', col1_title: 'عقود', col1_desc: 'عقودٌ تُبرز جمال العنق بلمسة ضوءٍ خفية.',
+    col2_index: '02 — أطقم', col2_title: 'أطقم', col2_desc: 'أطقمٌ متناسقة، مصمَّمة لتُلبَس معًا.',
+    col3_index: '03 — أقراط', col3_title: 'أقراط', col3_desc: 'أقراطٌ تلتقط كل بريقٍ من الضوء.',
+    best_eyebrow: 'الأكثر تفضيلاً', best_title: 'الأكثر <em>مبيعًا</em>', best_viewall: 'عرض كل القطع',
+    mat_eyebrow: 'الخامة', mat_title: 'جمالٌ <em>يدوم</em>',
+    mat_sub: 'مصنوعة من الفولاذ المقاوم للصدأ، تمنحك مجوهراتنا بريقًا راقيًا، ومتانةً يومية، وعنايةً سهلة.',
+    mat_f1_h: 'متانة يومية', mat_f1_p: 'صُمِّمت لتحافظ على شكلها وبريقها مع مرور الوقت.',
+    mat_f2_h: 'سهلة العناية', mat_f2_p: 'تكفي قطعة قماش ناعمة وجافة لإعادة البريق.',
+    mat_f3_h: 'لمسة راقية', mat_f3_p: 'لونٌ ذهبيٌّ شامبانيا وسطحٌ صافٍ كالمرآة.',
+    about_eyebrow: 'قصتنا', about_title: 'مصمَّمة لأناقة <em>يومك</em>',
+    about_p: 'تصنع BELORYA مجوهرات من الفولاذ المقاوم للصدأ لمن يبحثن عن أناقة راقية دون تعقيد. كل قطعة مصمَّمة لتكون خالدة، متعدّدة الاستعمالات، وسهلة اللبس كل يوم.',
+    about_cta: 'اكتشفي المجموعة',
+    colpage_title: '<em>المجموعة</em>',
+    colpage_sub: 'مجوهرات راقية من الفولاذ المقاوم للصدأ، مصمَّمة لتُلبَس كل يوم.',
+    sort_label: 'ترتيب',
+    s_featured: 'مميّز', s_new: 'الأحدث', s_price_asc: 'السعر: من الأقل للأعلى',
+    s_price_desc: 'السعر: من الأعلى للأقل', s_best: 'الأكثر مبيعًا',
+    f_all: 'الكل', f_new: 'وصل حديثًا', f_best: 'الأكثر مبيعًا', f_promo: 'العروض',
+    result_word: 'قطعة', empty_cat: 'لا توجد قطع في هذه الفئة حاليًا.',
+    wa_hello: 'مرحبًا BELORYA،', wa_want: 'أودّ أن أطلب:',
+    wa_subtotal: 'المجموع الفرعي', wa_promo: 'رمز الخصم', wa_discount: 'الخصم',
+    wa_shipping: 'التوصيل', wa_shipping_fee: 'رسوم التوصيل', wa_total: 'الإجمالي',
+    wa_free: 'مجاني', wa_name: 'الاسم', wa_phone: 'الهاتف', wa_address: 'العنوان', wa_thanks: 'شكرًا.',
+    wa_interested: 'أنا مهتمّة بـ'
   }
 };
 
@@ -269,4 +387,5 @@ function applyStaticI18n(root = document) {
     });
   });
   document.documentElement.lang = getLang();
+  document.documentElement.dir = isRTL() ? 'rtl' : 'ltr';
 }

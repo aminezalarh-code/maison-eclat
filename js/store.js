@@ -21,14 +21,20 @@ window.Store = (function () {
       const c = window.supabase.createClient(C.url, C.anonKey);
       S.client = c;
 
-      const [cats, prods, imgs, setts, promos] = await Promise.all([
+      const [cats, prods, imgs, setts, promos, vars] = await Promise.all([
         c.from('categories').select('*').order('display_order'),
         c.from('products').select('*').in('status', ['active', 'out_of_stock']).order('display_order').order('created_at', { ascending: false }),
         c.from('product_images').select('*').order('display_order'),
         c.from('settings').select('*'),
-        c.from('promo_codes').select('*').eq('active', true)
+        c.from('promo_codes').select('*').eq('active', true),
+        c.from('product_variants').select('*').order('display_order')
       ]);
       if (prods.error || !prods.data) return { ok: false };
+
+      const varsByP = {};
+      (vars && vars.data || []).forEach(v => (varsByP[v.product_id] = varsByP[v.product_id] || []).push({
+        name: v.name, color: v.color || v.name, stock: v.stock == null ? null : Number(v.stock), price_diff: Number(v.price_diff || 0)
+      }));
 
       const catById = {};
       (cats.data || []).forEach(k => {
@@ -55,7 +61,8 @@ window.Store = (function () {
           badge: p.badge || (p.is_best_seller ? 'Best Seller' : (p.is_new ? 'New' : null)),
           image: p.featured_image || pimgs[0] || '',
           images: pimgs.length ? pimgs : (p.featured_image ? [p.featured_image] : []),
-          stock: p.stock == null ? null : Number(p.stock), status: p.status
+          stock: p.stock == null ? null : Number(p.stock), status: p.status,
+          variants: varsByP[p.id] || []
         };
       });
       if (mapped.length) window.PRODUCTS = mapped;
