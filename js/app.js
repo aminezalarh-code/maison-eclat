@@ -25,6 +25,11 @@ let SHIP_FEE = 35;                   // MAD, outside Casablanca under threshold
 let SHIP_FREE_THRESHOLD = 250;       // MAD
 let SHIP_CASA_FREE = true;
 
+/* Marketing pixels — defaults; the admin (Paramètres → Meta Pixel / Google
+   Analytics) overrides these via the settings table. */
+let META_PIXEL = '897739612720418';
+let GA_ID = '';
+
 function findPromo(code) {
   const c = String(code || '').trim().toUpperCase();
   if (!c) return null;
@@ -279,6 +284,7 @@ function addToCart(id, qty = 1, variant = null) {
   renderCart();
   renderCartPage();
   toast(t('cart_added', { name: p.name + (v ? ' · ' + v : '') }));
+  track('AddToCart', { content_ids: [id], content_name: p.name, content_type: 'product', value: p.price * qty, currency: 'MAD' });
 }
 /* setQty operates on a line key ("id|variant"); qty<=0 removes the line. */
 function setQty(key, qty) {
@@ -497,7 +503,35 @@ function waOrderCart() {
     Store.saveOrder(order, items);
   }
 
+  track('InitiateCheckout', { value: T.total, currency: 'MAD', num_items: cartCount() });
   window.open(`${SOCIALS.whatsapp}?text=${msg}`, '_blank');
+}
+
+/* ---------------- Marketing pixels (Meta / Google Analytics) ---------------- */
+function initPixels(seo) {
+  const pid = String((seo && seo.meta_pixel) || META_PIXEL || '').trim();
+  if (pid && !window.fbq) {
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+      document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', pid);
+    fbq('track', 'PageView');
+  }
+  const ga = String((seo && seo.ga) || GA_ID || '').trim();
+  if (ga && !window.gtag) {
+    const s = document.createElement('script'); s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(ga);
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { dataLayer.push(arguments); };
+    gtag('js', new Date()); gtag('config', ga);
+  }
+}
+/* Fire a Meta Pixel standard event (no-op when the pixel isn't loaded). */
+function track(event, params) {
+  try { if (window.fbq) fbq('track', event, params || {}); } catch (e) { /* never break the shop */ }
 }
 
 /* ---------------- Toast ---------------- */
@@ -789,6 +823,7 @@ function renderProductPage() {
   const waOrder = () => {
     const colour = selectedVariant ? `%0A${t('pdp_color')} : ${selectedVariant}` : '';
     const msg = `${t('wa_hello')}%0A${t('wa_interested')} : ${p.name} (${formatPrice(p.price)})${colour}%0A${t('pdp_qty')} : ${q}`;
+    track('InitiateCheckout', { content_ids: [p.id], content_name: p.name, value: p.price * q, currency: 'MAD' });
     window.open(`${SOCIALS.whatsapp}?text=${msg}`, '_blank');
   };
   document.getElementById('pdpWa').onclick = waOrder;
@@ -807,6 +842,8 @@ function renderProductPage() {
       sticky.classList.toggle('show', !e.isIntersecting && e.boundingClientRect.top < 0);
     }, { threshold: 0 }).observe(buyBtn);
   }
+
+  track('ViewContent', { content_ids: [p.id], content_name: p.name, content_type: 'product', value: p.price, currency: 'MAD' });
 
   initReveal();
 }
@@ -896,12 +933,14 @@ function applySettings(S, promo) {
 
 /* ---------------- Boot ---------------- */
 document.addEventListener('DOMContentLoaded', async () => {
+  let seoSettings = null;
   try {
     if (window.Store && Store.hydrate) {
       const r = await Store.hydrate();
-      if (r && r.ok) applySettings(Store.settings, Store.promo);
+      if (r && r.ok) { applySettings(Store.settings, Store.promo); seoSettings = Store.settings.seo || null; }
     }
   } catch (e) { /* graceful fallback to built-in data */ }
+  initPixels(seoSettings);
   applyStaticI18n();
   renderHeader();
   renderTrustBar();
