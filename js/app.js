@@ -27,7 +27,7 @@ let SHIP_CASA_FREE = true;
 
 /* Marketing pixels — defaults; the admin (Paramètres → Meta Pixel / Google
    Analytics) overrides these via the settings table. */
-let META_PIXEL = '897739612720418';
+let META_PIXEL = '1061131383114577'; // "Pixel Belorya" — the pixel attached to the ad account
 let GA_ID = '';
 
 function findPromo(code) {
