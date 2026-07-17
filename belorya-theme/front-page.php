@@ -1,0 +1,160 @@
+<?php
+/**
+ * Front page — faithful port of the original index.html.
+ * Static sections are rendered here; the best-sellers grid + trust bar are
+ * hydrated by belorya.js from the WooCommerce catalogue. Section images pull
+ * the first photo of a product by slug (belorya_img), falling back gracefully.
+ */
+if (!defined('ABSPATH')) exit;
+get_header();
+
+$shop = function_exists('wc_get_page_permalink') ? wc_get_page_permalink('shop') : home_url('/');
+?>
+<main data-page="home">
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="hero__glow"></div>
+    <div class="wrap hero__grid">
+      <div class="hero__copy">
+        <span class="eyebrow" data-reveal data-i18n="hero_eyebrow">Belorya · Eternal Shine</span>
+        <h1 class="hero__title" data-reveal data-delay="1" data-i18n-html="hero_title">Bijoux en acier<br><em>inoxydable</em></h1>
+        <p class="hero__sub" data-reveal data-delay="2" data-i18n="hero_sub">Des pièces raffinées, pensées pour l'élégance du quotidien, l'éclat et la durabilité.</p>
+        <div class="hero__cta" data-reveal data-delay="3">
+          <a class="btn btn--gold" href="<?php echo esc_url($shop); ?>" data-i18n="hero_cta1">Découvrir la collection</a>
+          <a class="btn" href="<?php echo esc_url(add_query_arg('sort', 'best', $shop)); ?>" data-i18n="hero_cta2">Meilleures ventes</a>
+        </div>
+        <div class="hero__ship" data-reveal data-delay="3">
+          <span class="hero__ship-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 7h11v8H3zM14 10h4l3 3v2h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg><span data-i18n="ship_casa_free">Livraison gratuite à Casablanca</span></span>
+          <span class="hero__ship-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg><span data-i18n="ship_maroc_250">Livraison offerte partout au Maroc dès 250 MAD</span></span>
+        </div>
+        <div class="hero__meta" data-reveal data-delay="4">
+          <div><b data-i18n="hero_m1_b">316L</b><span data-i18n="hero_m1_s">Acier chirurgical</span></div>
+          <div><b data-i18n="hero_m2_b">Paiement</b><span data-i18n="hero_m2_s">à la livraison</span></div>
+          <div><b data-i18n="hero_m3_b">2–4 jours</b><span data-i18n="hero_m3_s">Livraison rapide</span></div>
+        </div>
+      </div>
+      <div class="hero__visual" data-reveal data-delay="2">
+        <div class="hero__frame">
+          <img src="<?php echo esc_url(belorya_img('reflet-lunaire')); ?>" alt="Parure Reflet Lunaire en acier inoxydable doré - Belorya" />
+        </div>
+        <div class="hero__badge">
+          <span>The Signature</span>
+          <p>Reflet Lunaire</p>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-hint"><span>Scroll</span><i></i></div>
+  </section>
+
+  <!-- ===== TRUST BAR ===== -->
+  <div class="trust-bar-mount"></div>
+
+  <!-- ===== FEATURED COLLECTIONS ===== -->
+  <section class="section" id="collections">
+    <div class="wrap">
+      <div class="section-head center" data-reveal>
+        <span class="eyebrow center" data-i18n="feat_eyebrow">La Maison</span>
+        <h2 class="section-title" data-i18n-html="feat_title">Nos <em>collections</em></h2>
+        <p class="section-sub" data-i18n="feat_sub">Pensées pour briller. Faites pour durer.</p>
+      </div>
+      <div class="collections-grid collections-grid--3" id="collections-grid">
+        <a class="collection-card" href="<?php echo esc_url(add_query_arg('cat', 'necklaces', $shop)); ?>" data-reveal data-delay="1">
+          <div class="collection-card__media"><img src="<?php echo esc_url(belorya_img('cygne-daurore')); ?>" alt="Colliers Belorya" loading="lazy" /></div>
+          <div class="collection-card__body">
+            <span class="collection-card__index" data-i18n="col1_index">01 — Colliers</span>
+            <h3 data-i18n="col1_title">Colliers</h3>
+            <p data-i18n="col1_desc">Des colliers qui subliment le décolleté d'une lumière discrète.</p>
+            <span class="link-arrow" data-i18n="col_view">Voir la collection</span>
+          </div>
+        </a>
+        <a class="collection-card" href="<?php echo esc_url(add_query_arg('cat', 'sets', $shop)); ?>" data-reveal data-delay="2">
+          <div class="collection-card__media"><img src="<?php echo esc_url(belorya_img('petales-damour')); ?>" alt="Parures Belorya" loading="lazy" /></div>
+          <div class="collection-card__body">
+            <span class="collection-card__index" data-i18n="col2_index">02 — Parures</span>
+            <h3 data-i18n="col2_title">Parures</h3>
+            <p data-i18n="col2_desc">Des parures assorties, pensées pour être portées ensemble.</p>
+            <span class="link-arrow" data-i18n="col_view">Voir la collection</span>
+          </div>
+        </a>
+        <a class="collection-card" href="<?php echo esc_url(add_query_arg('cat', 'earrings', $shop)); ?>" data-reveal data-delay="3">
+          <div class="collection-card__media"><img src="<?php echo esc_url(belorya_img('etoile-dor')); ?>" alt="Boucles d'oreilles Belorya" loading="lazy" /></div>
+          <div class="collection-card__body">
+            <span class="collection-card__index" data-i18n="col3_index">03 — Boucles</span>
+            <h3 data-i18n="col3_title">Boucles d'oreilles</h3>
+            <p data-i18n="col3_desc">Des boucles d'oreilles qui captent chaque éclat de lumière.</p>
+            <span class="link-arrow" data-i18n="col_view">Voir la collection</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== BEST SELLERS ===== -->
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head" data-reveal style="display:flex;justify-content:space-between;align-items:flex-end;max-width:none;flex-wrap:wrap;gap:1.5rem">
+        <div>
+          <span class="eyebrow" data-i18n="best_eyebrow">Les plus aimés</span>
+          <h2 class="section-title" data-i18n-html="best_title">Meilleures <em>ventes</em></h2>
+        </div>
+        <a class="link-arrow" href="<?php echo esc_url(add_query_arg('sort', 'best', $shop)); ?>"><span data-i18n="best_viewall">Voir toutes les pièces</span> <svg viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 5h15M12 1l4 4-4 4"/></svg></a>
+      </div>
+      <div class="product-grid" id="bestsellers-grid"></div>
+    </div>
+  </section>
+
+  <!-- ===== MATERIAL ===== -->
+  <section class="section material" id="material">
+    <div class="wrap material__grid">
+      <div data-reveal>
+        <span class="eyebrow" data-i18n="mat_eyebrow">La matière</span>
+        <h2 class="section-title" data-i18n-html="mat_title">Une beauté qui <em>dure</em></h2>
+        <p class="section-sub" style="max-width:46ch" data-i18n="mat_sub">Réalisés en acier inoxydable, nos bijoux offrent un éclat raffiné, une durabilité au quotidien et un entretien facile.</p>
+        <div class="feature-list">
+          <div class="feature"><span class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 13l4 4L19 7"/></svg></span><div><h4 data-i18n="mat_f1_h">Durable au quotidien</h4><p data-i18n="mat_f1_p">Conçu pour garder sa forme et son éclat au fil du temps.</p></div></div>
+          <div class="feature"><span class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 13l4 4L19 7"/></svg></span><div><h4 data-i18n="mat_f2_h">Facile à entretenir</h4><p data-i18n="mat_f2_p">Un chiffon doux et sec suffit à raviver la brillance.</p></div></div>
+          <div class="feature"><span class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 13l4 4L19 7"/></svg></span><div><h4 data-i18n="mat_f3_h">Finition premium</h4><p data-i18n="mat_f3_p">Un ton doré champagne et une surface nette, comme un miroir.</p></div></div>
+        </div>
+      </div>
+      <div class="material__visual" data-reveal data-delay="2">
+        <img src="<?php echo esc_url(belorya_img('lheritiere')); ?>" alt="Détail d'un bijou Belorya en acier inoxydable doré" loading="lazy" />
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== BRAND STORY ===== -->
+  <section class="section" id="about">
+    <div class="wrap">
+      <div class="editorial__grid" data-reveal>
+        <div class="editorial__text">
+          <span class="eyebrow" data-i18n="about_eyebrow">Notre histoire</span>
+          <h2 class="section-title" style="margin-top:1rem" data-i18n-html="about_title">Pensés pour l'élégance du <em>quotidien</em></h2>
+          <p data-i18n="about_p">BELORYA crée des bijoux en acier inoxydable pour celles qui veulent un style raffiné, sans complication. Chaque pièce est pensée pour être intemporelle, polyvalente et facile à porter chaque jour.</p>
+          <a class="btn btn--gold" href="<?php echo esc_url($shop); ?>" data-i18n="about_cta">Découvrir la collection</a>
+        </div>
+        <div class="editorial__media">
+          <img src="<?php echo esc_url(belorya_img('laureole')); ?>" alt="Bijoux Belorya portés, élégance au quotidien" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== NEWSLETTER ===== -->
+  <section class="section newsletter" id="newsletter">
+    <div class="wrap">
+      <div class="newsletter__card" data-reveal>
+        <span class="eyebrow center" data-i18n="nl_eyebrow">Membres privilégiés</span>
+        <span class="gold-divider" style="margin-top:1.4rem"></span>
+        <h2 class="section-title" data-i18n-html="nl_title">Rejoignez la <em>liste privée</em></h2>
+        <p class="section-sub" style="margin-inline:auto" data-i18n="nl_sub">Accédez en avant-première aux nouveautés, aux éditions limitées et aux offres exclusives.</p>
+        <form class="newsletter__form" id="newsletterForm">
+          <input type="email" placeholder="Votre adresse e-mail" aria-label="Email" required data-i18n-attr="placeholder:nl_ph" />
+          <button class="btn btn--gold" type="submit" data-i18n="nl_subscribe">S'inscrire</button>
+        </form>
+        <p class="form-msg"></p>
+        <p class="newsletter__note" data-i18n="nl_note">Pas de spam — uniquement les nouveautés et offres privées. Désabonnement à tout moment.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<?php get_footer();
