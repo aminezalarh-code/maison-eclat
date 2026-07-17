@@ -169,6 +169,8 @@ function belorya_catalog() {
             'price'    => $price,
             'oldPrice' => ($on_sale && $regular > $price) ? $regular : null,
             'material' => 'Acier inoxydable',
+            'description' => wp_strip_all_tags($product->get_description()),
+            'short'    => wp_strip_all_tags($product->get_short_description()),
             'image'    => $images[0],
             'images'   => $images,
             'badge'    => $badge ?: null,
