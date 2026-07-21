@@ -6,7 +6,7 @@
  */
 if (!defined('ABSPATH')) exit;
 
-define('BELORYA_VER', '1.0.1');
+define('BELORYA_VER', '1.0.2');
 
 /* ---------------- Theme setup ---------------- */
 add_action('after_setup_theme', function () {
