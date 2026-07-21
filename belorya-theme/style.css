@@ -887,8 +887,8 @@ body.menu-open .mobile-menu a { animation: menuIn .6s var(--ease) forwards; }
   .hero__title { font-size: clamp(2.6rem, 11vw, 3.4rem); }
   .hero__sub { font-size: 1.06rem; }
   .hero__meta { gap: 1.4rem 2rem; }
-  .hero__cta { width: 100%; }
-  .hero__cta .btn { flex: 1; justify-content: center; padding-inline: 1.2em; }
+  .hero__cta { width: 100%; flex-direction: column; }
+  .hero__cta .btn { width: 100%; justify-content: center; padding-inline: 1.2em; }
   .btn { padding: 1.05em 1.6em; }
   .section-title { font-size: clamp(1.9rem, 8vw, 2.5rem); }
   .footer__top { grid-template-columns: 1fr; }
