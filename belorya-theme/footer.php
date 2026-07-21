@@ -40,7 +40,7 @@ $ic = [
           <li><a href="<?php echo esc_url($shop); ?>" data-i18n="footer_l_necklaces">Colliers</a></li>
           <li><a href="<?php echo esc_url($shop); ?>" data-i18n="footer_l_sets">Parures</a></li>
           <li><a href="<?php echo esc_url($shop); ?>" data-i18n="footer_l_earrings">Boucles d'oreilles</a></li>
-          <li><a href="<?php echo esc_url(add_query_arg('orderby', 'popularity', $shop)); ?>" data-i18n="footer_l_best">Meilleures ventes</a></li>
+          <li><a href="<?php echo esc_url(add_query_arg('cat', 'best', $shop)); ?>" data-i18n="footer_l_best">Meilleures ventes</a></li>
           <li><a href="<?php echo esc_url($shop); ?>" data-i18n="footer_l_new">Nouveautés</a></li>
         </ul>
       </div>
@@ -49,7 +49,7 @@ $ic = [
         <ul>
           <li><a href="<?php echo esc_url($home . '#about'); ?>" data-i18n="footer_l_story">Notre histoire</a></li>
           <li><a href="<?php echo esc_url($home . '#material'); ?>" data-i18n="footer_l_materials">Nos matières</a></li>
-          <li><a href="<?php echo esc_url(add_query_arg('orderby', 'popularity', $shop)); ?>" data-i18n="footer_l_best">Meilleures ventes</a></li>
+          <li><a href="<?php echo esc_url(add_query_arg('cat', 'best', $shop)); ?>" data-i18n="footer_l_best">Meilleures ventes</a></li>
           <li><a href="<?php echo esc_url($home . '#newsletter'); ?>" data-i18n="footer_l_private">Liste privée</a></li>
         </ul>
       </div>

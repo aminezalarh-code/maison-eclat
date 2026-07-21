@@ -15,7 +15,7 @@ $brand = '<img class="brand__logo %s" src="' . esc_url($logo) . '" alt="Belorya 
 $nav = [
     ['href' => $home, 'key' => 'nav_home', 'label' => 'Accueil'],
     ['href' => $shop, 'key' => 'nav_collections', 'label' => 'Collection'],
-    ['href' => add_query_arg('orderby', 'popularity', $shop), 'key' => 'nav_best', 'label' => 'Meilleures ventes'],
+    ['href' => add_query_arg('cat', 'best', $shop), 'key' => 'nav_best', 'label' => 'Meilleures ventes'],
     ['href' => $home . '#about', 'key' => 'nav_about', 'label' => 'À propos'],
     ['href' => $home . '#contact', 'key' => 'nav_contact', 'label' => 'Contact'],
 ];
