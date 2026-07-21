@@ -42,6 +42,17 @@ add_action('wp_enqueue_scripts', function () {
     wp_localize_script('belorya-app', 'BELORYA', belorya_js_config());
 }, 20);
 
+/* Our theme fully styles the storefront (ported design). Drop WooCommerce's own
+   stylesheets so they don't fight our layout — on shop/product/cart pages their
+   default CSS (esp. woocommerce-smallscreen) broke the mobile header + grid. */
+add_filter('woocommerce_enqueue_styles', '__return_empty_array');
+add_action('wp_enqueue_scripts', function () {
+    foreach (['wc-blocks-style', 'wc-blocks-vendors-style', 'wc-blocks-packages-style'] as $h) {
+        wp_dequeue_style($h);
+        wp_deregister_style($h);
+    }
+}, 100);
+
 /* ---------------- Brand settings (with defaults matching the live site) ---------------- */
 function belorya_settings() {
     return [
